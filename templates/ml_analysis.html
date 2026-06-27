@@ -5,16 +5,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section id="modelStatus" class="alert info" data-searchable="machine learning model status">
+<!-- Model status banner -->
+<section id="modelStatus" class="alert info" role="status" aria-live="polite" data-searchable="model status machine learning online offline">
   <span class="spinner" aria-hidden="true"></span>
   <div>
-    <strong>Checking model status</strong>
+    <strong>Checking model status…</strong>
     <div>Loading Random Forest detector availability.</div>
   </div>
 </section>
 
+<!-- ML metric cards -->
 <section class="metric-grid" aria-label="ML detection analytics">
-  <article class="metric-card" style="--metric-color: var(--red);" data-searchable="brute force ml detections">
+  <article class="metric-card" style="--metric-color: var(--red);" data-searchable="brute force ml detections classifier">
     <div class="metric-head">
       <div>
         <div class="metric-kicker">Brute Force</div>
@@ -42,7 +44,7 @@
     </div>
   </article>
 
-  <article class="metric-card" style="--metric-color: var(--indigo);" data-searchable="total ml detections">
+  <article class="metric-card" style="--metric-color: var(--indigo);" data-searchable="total ml detections flagged">
     <div class="metric-head">
       <div>
         <div class="metric-kicker">Total Detections</div>
@@ -56,7 +58,7 @@
     </div>
   </article>
 
-  <article class="metric-card" style="--metric-color: var(--cyan);" data-searchable="critical severity ml detections">
+  <article class="metric-card" style="--metric-color: var(--cyan);" data-searchable="critical severity ml high risk">
     <div class="metric-head">
       <div>
         <div class="metric-kicker">Critical Severity</div>
@@ -71,7 +73,9 @@
   </article>
 </section>
 
-<section class="table-panel">
+<!-- Analysis workspace -->
+<section class="table-panel" aria-label="ML analysis workspace">
+  <!-- Panel head -->
   <div class="panel-head">
     <div class="panel-title">
       <span class="panel-icon" style="--metric-color: var(--indigo);"><i class="fas fa-brain"></i></span>
@@ -81,91 +85,116 @@
       </div>
     </div>
     <div class="toolbar-group">
-      <button class="button sm" type="button" id="refreshDetections"><i class="fas fa-rotate"></i> Refresh</button>
-      <button class="button sm" type="button" data-dialog-open="clearDetectionsDialog"><i class="fas fa-trash"></i> Clear</button>
-      <button class="button primary sm" type="button" id="analyzeButton"><i class="fas fa-play"></i> Run Analysis</button>
+      <button class="button sm" type="button" id="refreshDetections" aria-label="Refresh detections">
+        <i class="fas fa-rotate"></i> Refresh
+      </button>
+      <button class="button sm" type="button" data-dialog-open="clearDetectionsDialog" aria-label="Clear all detections">
+        <i class="fas fa-trash"></i> Clear
+      </button>
+      <button class="button primary sm" type="button" id="analyzeButton" aria-label="Run ML analysis">
+        <i class="fas fa-play"></i> Run Analysis
+      </button>
     </div>
   </div>
 
-  <div class="toolbar">
-    <div class="tabs" data-tabs role="tablist" aria-label="ML analysis tabs">
-      <button class="tab-button active" type="button" role="tab" aria-selected="true" data-tab-target="detections">Detections</button>
-      <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="models">Models</button>
-      <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="upload">Upload</button>
+  <!-- Tabs -->
+  <div class="toolbar" style="padding-top: 0; padding-bottom: 0; border-bottom: none;">
+    <div class="tabs" data-tabs role="tablist" aria-label="ML workspace tabs" style="width: 100%; border-bottom: 1px solid var(--border);">
+      <button class="tab-button active" type="button" role="tab" aria-selected="true" data-tab-target="detections">
+        <i class="fas fa-radar" style="font-size: 0.75rem;"></i> Detections
+      </button>
+      <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="models">
+        <i class="fas fa-microchip" style="font-size: 0.75rem;"></i> Models
+      </button>
+      <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="upload">
+        <i class="fas fa-cloud-arrow-up" style="font-size: 0.75rem;"></i> Upload
+      </button>
+      <span class="badge neutral" style="margin-left: auto; margin-right: var(--s4); align-self: center;">
+        <span class="live-dot"></span> Auto refresh
+      </span>
     </div>
-    <span class="badge neutral"><span class="live-dot"></span> Auto refresh</span>
   </div>
 
-  <div class="panel-body">
-    <div class="tab-panel" data-tab-panel="detections">
-      <div class="detection-grid" id="detectionsGrid">
-        <div class="skeleton block"></div>
-        <div class="skeleton block"></div>
-        <div class="skeleton block"></div>
-      </div>
+  <!-- Tab: Detections -->
+  <div class="tab-panel" data-tab-panel="detections">
+    <div class="detection-grid" id="detectionsGrid">
+      <div class="skeleton block" aria-hidden="true"></div>
+      <div class="skeleton block" aria-hidden="true"></div>
+      <div class="skeleton block" aria-hidden="true"></div>
     </div>
+  </div>
 
-    <div class="tab-panel" data-tab-panel="models" hidden>
-      <div class="layout-grid equal">
-        <div class="panel">
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="panel-icon" style="--metric-color: var(--red);"><i class="fas fa-user-slash"></i></span>
-              <div>
-                <h2>Brute Force Classifier</h2>
-                <p>Authentication behavior detector.</p>
-              </div>
+  <!-- Tab: Models -->
+  <div class="tab-panel" data-tab-panel="models" hidden>
+    <div class="layout-grid equal">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="panel-icon" style="--metric-color: var(--red);"><i class="fas fa-user-slash"></i></span>
+            <div>
+              <h2>Brute Force Classifier</h2>
+              <p>Authentication behavior detector.</p>
             </div>
-          </div>
-          <div class="panel-body" id="bruteModelState">
-            <div class="skeleton line"></div>
           </div>
         </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="panel-icon" style="--metric-color: var(--amber);"><i class="fas fa-database"></i></span>
-              <div>
-                <h2>SQL Injection Classifier</h2>
-                <p>Payload intent detector.</p>
-              </div>
-            </div>
-          </div>
-          <div class="panel-body" id="sqlModelState">
-            <div class="skeleton line"></div>
-          </div>
+        <div class="panel-body" id="bruteModelState">
+          <div class="skeleton line" aria-hidden="true"></div>
+          <div class="skeleton line" style="width: 75%;" aria-hidden="true"></div>
         </div>
       </div>
-    </div>
 
-    <div class="tab-panel" data-tab-panel="upload" hidden>
-      <div class="layout-grid equal">
-        <div class="file-upload" data-searchable="file upload json csv telemetry">
-          <input id="telemetryFile" type="file" accept=".json,.csv,text/csv,application/json" data-file-input>
-          <div class="file-upload-content">
-            <span class="file-upload-icon"><i class="fas fa-cloud-arrow-up"></i></span>
-            <strong data-file-label="telemetryFile">Choose JSON or CSV file</strong>
-            <span class="text-muted">Stage telemetry for review before wiring a backend importer.</span>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="panel-icon" style="--metric-color: var(--amber);"><i class="fas fa-database"></i></span>
+            <div>
+              <h2>SQL Injection Classifier</h2>
+              <p>Payload intent detector.</p>
+            </div>
           </div>
         </div>
-        <div class="panel">
-          <div class="panel-head">
-            <div class="panel-title">
-              <span class="panel-icon" style="--metric-color: var(--green);"><i class="fas fa-list-check"></i></span>
-              <div>
-                <h2>Upload Checklist</h2>
-                <p>Expected telemetry fields for future imports.</p>
-              </div>
+        <div class="panel-body" id="sqlModelState">
+          <div class="skeleton line" aria-hidden="true"></div>
+          <div class="skeleton line" style="width: 75%;" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Upload -->
+  <div class="tab-panel" data-tab-panel="upload" hidden>
+    <div class="layout-grid equal">
+      <!-- File drop zone -->
+      <div class="file-upload" data-searchable="file upload json csv telemetry stage">
+        <input id="telemetryFile" type="file" accept=".json,.csv,text/csv,application/json" data-file-input aria-label="Choose telemetry file">
+        <div class="file-upload-content">
+          <span class="file-upload-icon"><i class="fas fa-cloud-arrow-up"></i></span>
+          <strong data-file-label="telemetryFile">Choose JSON or CSV file</strong>
+          <span class="text-muted">or drag and drop here</span>
+          <span class="text-muted" style="font-size: 0.75rem; margin-top: 4px;">Stage telemetry for review before wiring a backend importer.</span>
+        </div>
+      </div>
+
+      <!-- Upload checklist -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="panel-icon" style="--metric-color: var(--green);"><i class="fas fa-list-check"></i></span>
+            <div>
+              <h2>Upload Checklist</h2>
+              <p>Expected telemetry fields for imports.</p>
             </div>
           </div>
-          <div class="panel-body">
-            <div class="quick-list">
-              <div class="quick-item"><span class="badge success">Required</span><code>source_ip</code></div>
-              <div class="quick-item"><span class="badge success">Required</span><code>payload</code></div>
-              <div class="quick-item"><span class="badge neutral">Optional</span><code>target_url</code></div>
-              <button class="button primary block" type="button" id="validateUpload"><i class="fas fa-wand-magic-sparkles"></i> Validate File</button>
-            </div>
+        </div>
+        <div class="panel-body">
+          <div class="quick-list">
+            <div class="quick-item"><span class="badge success">Required</span><code>source_ip</code></div>
+            <div class="quick-item"><span class="badge success">Required</span><code>payload</code></div>
+            <div class="quick-item"><span class="badge neutral">Optional</span><code>target_url</code></div>
+            <div class="quick-item"><span class="badge neutral">Optional</span><code>timestamp</code></div>
+            <button class="button primary block" type="button" id="validateUpload" style="margin-top: var(--s2);">
+              <i class="fas fa-wand-magic-sparkles"></i> Validate File
+            </button>
           </div>
         </div>
       </div>
@@ -173,6 +202,7 @@
   </div>
 </section>
 
+<!-- Clear detections dialog -->
 <div class="dialog-backdrop" data-dialog-backdrop="clearDetectionsDialog"></div>
 <section class="dialog" id="clearDetectionsDialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="clearDetectionsTitle">
   <div class="dialog-head">
@@ -185,14 +215,21 @@
     </button>
   </div>
   <div class="dialog-body">
-    <p class="text-muted">This permanently removes all stored ML detection records. Attack logs remain available unless cleared from Log Management.</p>
+    <div class="alert warning" style="margin-bottom: var(--s4);">
+      <i class="fas fa-triangle-exclamation"></i>
+      <div><strong>This cannot be undone</strong><div>All stored ML detection records will be permanently removed.</div></div>
+    </div>
+    <p class="text-muted">Attack logs remain available unless cleared separately from Log Management.</p>
   </div>
   <div class="dialog-foot">
     <button class="button" type="button" data-dialog-close="clearDetectionsDialog">Cancel</button>
-    <button class="button danger" type="button" id="confirmClearDetections"><i class="fas fa-trash"></i> Clear Detections</button>
+    <button class="button danger" type="button" id="confirmClearDetections">
+      <i class="fas fa-trash"></i> Clear Detections
+    </button>
   </div>
 </section>
 
+<!-- Detection detail side panel -->
 <div class="side-panel-backdrop" data-panel-backdrop="detectionPanel"></div>
 <aside class="side-panel" id="detectionPanel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="detectionPanelTitle">
   <div class="side-panel-head">
@@ -200,7 +237,7 @@
       <span class="eyebrow">Detection Detail</span>
       <h2 class="section-title" id="detectionPanelTitle">Detection</h2>
     </div>
-    <button class="icon-button" type="button" data-panel-close="detectionPanel" aria-label="Close details">
+    <button class="icon-button" type="button" data-panel-close="detectionPanel" aria-label="Close detection detail">
       <i class="fas fa-xmark"></i>
     </button>
   </div>
@@ -217,198 +254,217 @@
     let detections = [];
 
     function label(value) {
-      return String(value || "unknown").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return String(value || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
     function riskTone(severity, probability) {
-      const sev = String(severity || "").toLowerCase();
+      const sev  = String(severity || '').toLowerCase();
       const prob = Number(probability || 0);
-      if (sev === "critical" || prob >= 0.95) return "danger";
-      if (sev === "high" || prob >= 0.8) return "warning";
-      if (sev === "low") return "success";
-      return "blue";
+      if (sev === 'critical' || prob >= 0.95) return 'danger';
+      if (sev === 'high'     || prob >= 0.80) return 'warning';
+      if (sev === 'low') return 'success';
+      return 'blue';
     }
 
     function renderStatus(status) {
-      const brute = status.brute_force || {};
-      const sql = status.sql_injection || {};
-      const both = brute.loaded && sql.loaded;
+      const brute   = status.brute_force    || {};
+      const sql     = status.sql_injection  || {};
+      const both    = brute.loaded && sql.loaded;
       const partial = brute.loaded || sql.loaded;
-      const tone = both ? "success" : partial ? "warning" : "danger";
-      const title = both ? "All ML models are operational" : partial ? "One ML model is unavailable" : "ML models are offline";
-      document.getElementById("modelStatus").className = `alert ${tone}`;
-      document.getElementById("modelStatus").innerHTML = `
-        <i class="fas ${both ? "fa-circle-check" : "fa-triangle-exclamation"}"></i>
+      const tone    = both ? 'success' : partial ? 'warning' : 'danger';
+      const title   = both ? 'All ML models are operational' : partial ? 'One ML model is unavailable' : 'ML models are offline';
+
+      const el = document.getElementById('modelStatus');
+      el.className = `alert ${tone}`;
+      el.innerHTML = `
+        <i class="fas ${both ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i>
         <div>
           <strong>${title}</strong>
-          <div>Brute force: ${brute.loaded ? "loaded" : "offline"}; SQL injection: ${sql.loaded ? "loaded" : "offline"}.</div>
+          <div>Brute force: ${brute.loaded ? 'loaded' : 'offline'} · SQL injection: ${sql.loaded ? 'loaded' : 'offline'}</div>
         </div>`;
 
-      document.getElementById("bruteModelState").innerHTML = modelState("Brute Force", brute.loaded);
-      document.getElementById("sqlModelState").innerHTML = modelState("SQL Injection", sql.loaded);
+      document.getElementById('bruteModelState').innerHTML = modelStateHTML('Brute Force', brute.loaded);
+      document.getElementById('sqlModelState').innerHTML   = modelStateHTML('SQL Injection', sql.loaded);
     }
 
-    function modelState(name, loaded) {
-      return `
-        <div class="stack">
-          <span class="badge ${loaded ? "success" : "danger"}"><i class="fas ${loaded ? "fa-circle-check" : "fa-circle-xmark"}"></i> ${loaded ? "Loaded" : "Offline"}</span>
-          <p class="text-muted">${name} classifier is ${loaded ? "ready for analysis and live detection storage" : "not available. Check model files and ml_service.py configuration"}.</p>
-          <div class="alert ${loaded ? "success" : "warning"}">
-            <i class="fas ${loaded ? "fa-shield-halved" : "fa-triangle-exclamation"}"></i>
-            <div><strong>${loaded ? "Operational" : "Needs attention"}</strong><div>${loaded ? "Predictions can be generated." : "Predictions may be incomplete."}</div></div>
-          </div>
-        </div>`;
+    function modelStateHTML(name, loaded) {
+      return `<div class="stack">
+        <span class="badge ${loaded ? 'success' : 'danger'}">
+          <i class="fas ${loaded ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> ${loaded ? 'Loaded' : 'Offline'}
+        </span>
+        <p class="text-muted">${name} classifier is ${loaded ? 'ready for analysis and live detection storage' : 'not available — check model files and ml_service.py configuration'}.</p>
+        <div class="alert ${loaded ? 'success' : 'warning'}">
+          <i class="fas ${loaded ? 'fa-shield-halved' : 'fa-triangle-exclamation'}"></i>
+          <div><strong>${loaded ? 'Operational' : 'Needs attention'}</strong><div>${loaded ? 'Predictions can be generated.' : 'Predictions may be incomplete.'}</div></div>
+        </div>
+      </div>`;
     }
 
     function renderStats(stats) {
-      document.getElementById("stat-brute").textContent = stats.brute_force || 0;
-      document.getElementById("stat-sql").textContent = stats.sql_injection || 0;
-      document.getElementById("stat-total").textContent = stats.total || stats.attack_detections || 0;
-      document.getElementById("stat-critical").textContent = stats.critical || 0;
+      document.getElementById('stat-brute').textContent    = stats.brute_force || 0;
+      document.getElementById('stat-sql').textContent      = stats.sql_injection || 0;
+      document.getElementById('stat-total').textContent    = stats.total || stats.attack_detections || 0;
+      document.getElementById('stat-critical').textContent = stats.critical || 0;
     }
 
     function renderDetections() {
-      const grid = document.getElementById("detectionsGrid");
+      const grid = document.getElementById('detectionsGrid');
       if (!detections.length) {
-        grid.innerHTML = `
-          <div class="empty-state" style="grid-column: 1 / -1;">
-            <i class="fas fa-radar"></i>
-            <h3>No detections yet</h3>
-            <p>Run analysis or generate test traffic. ML detections will appear here with confidence and severity.</p>
-          </div>`;
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
+          <i class="fas fa-radar"></i>
+          <h3>No detections yet</h3>
+          <p>Run analysis or generate test traffic. ML detections will appear here with confidence and severity.</p>
+        </div>`;
         return;
       }
-
-      grid.innerHTML = detections.map((detection) => {
-        const pct = Math.round(Number(detection.probability || 0) * 100);
+      grid.innerHTML = detections.map(detection => {
+        const pct  = Math.round(Number(detection.probability || 0) * 100);
         const tone = riskTone(detection.severity, detection.probability);
-        return `
-          <article class="detection-card" data-detection-id="${Number(detection.id)}" data-searchable="${WebShield.escapeHTML([detection.attack_type, detection.source_ip, detection.severity].join(" "))}">
-            <div class="detection-head">
-              <div>
-                <span class="badge ${tone}">${WebShield.escapeHTML(label(detection.severity))}</span>
-                <h3 class="section-title" style="margin-top: 10px;">${WebShield.escapeHTML(label(detection.attack_type))}</h3>
-              </div>
-              <button class="icon-button" type="button" aria-label="Open detection ${Number(detection.id)}"><i class="fas fa-arrow-up-right-from-square"></i></button>
+        return `<article class="detection-card" data-detection-id="${Number(detection.id)}" role="button" tabindex="0"
+                  data-searchable="${WebShield.escapeHTML([detection.attack_type, detection.source_ip, detection.severity].join(' '))}">
+          <div class="detection-head">
+            <div>
+              <span class="badge ${tone}">${WebShield.escapeHTML(label(detection.severity))}</span>
+              <h3 class="section-title" style="margin-top: 8px;">${WebShield.escapeHTML(label(detection.attack_type))}</h3>
             </div>
-            <div class="detection-meta">
-              <span><i class="fas fa-globe"></i> ${WebShield.escapeHTML(detection.source_ip || "Unknown IP")}</span>
-              <span><i class="fas fa-clock"></i> ${WebShield.escapeHTML(detection.detected_at || detection.timestamp || "Unknown time")}</span>
-            </div>
-            <div class="prob-wrap">
-              <div class="prob-label"><span>Confidence</span><strong>${pct}%</strong></div>
-              <div class="prob-track"><div class="prob-fill" style="width: ${pct}%"></div></div>
-            </div>
-          </article>`;
-      }).join("");
+            <button class="icon-button" type="button" aria-label="Open detection ${Number(detection.id)} detail">
+              <i class="fas fa-arrow-up-right-from-square"></i>
+            </button>
+          </div>
+          <div class="detection-meta">
+            <span><i class="fas fa-globe"></i> ${WebShield.escapeHTML(detection.source_ip || 'Unknown IP')}</span>
+            <span><i class="fas fa-clock"></i> ${WebShield.escapeHTML(detection.detected_at || detection.timestamp || 'Unknown time')}</span>
+          </div>
+          <div class="prob-wrap">
+            <div class="prob-label"><span>Confidence</span><strong>${pct}%</strong></div>
+            <div class="prob-track"><div class="prob-fill" style="width:${pct}%"></div></div>
+          </div>
+        </article>`;
+      }).join('');
     }
 
     function loadStatus() {
-      return fetch("{{ url_for('ml_status') }}")
-        .then((response) => response.json())
+      return fetch('{{ url_for("ml_status") }}')
+        .then(r => r.json())
         .then(renderStatus)
         .catch(() => {
-          document.getElementById("modelStatus").className = "alert danger";
-          document.getElementById("modelStatus").innerHTML = '<i class="fas fa-circle-xmark"></i><div><strong>Status unavailable</strong><div>Could not reach the ML status endpoint.</div></div>';
+          const el = document.getElementById('modelStatus');
+          el.className = 'alert danger';
+          el.innerHTML = '<i class="fas fa-circle-xmark"></i><div><strong>Status unavailable</strong><div>Could not reach the ML status endpoint.</div></div>';
         });
     }
 
     function loadStats() {
-      return fetch("{{ url_for('ml_stats') }}")
-        .then((response) => response.json())
+      return fetch('{{ url_for("ml_stats") }}')
+        .then(r => r.json())
         .then(renderStats)
         .catch(() => {});
     }
 
     function loadDetections(showToast) {
-      const grid = document.getElementById("detectionsGrid");
-      grid.innerHTML = '<div class="skeleton block"></div><div class="skeleton block"></div><div class="skeleton block"></div>';
-      return fetch("{{ url_for('ml_detections') }}")
-        .then((response) => response.json())
-        .then((data) => {
+      const grid = document.getElementById('detectionsGrid');
+      grid.innerHTML = '<div class="skeleton block" aria-hidden="true"></div><div class="skeleton block" aria-hidden="true"></div><div class="skeleton block" aria-hidden="true"></div>';
+      return fetch('{{ url_for("ml_detections") }}')
+        .then(r => r.json())
+        .then(data => {
           detections = data.detections || [];
           renderDetections();
-          if (showToast) WebShield.toast("Detections refreshed", `${detections.length} records loaded.`, "success");
+          if (showToast) WebShield.toast('Detections refreshed', `${detections.length} records loaded.`, 'success');
         })
         .catch(() => {
-          grid.innerHTML = '<div class="error-state" style="grid-column: 1 / -1;"><i class="fas fa-circle-xmark"></i><h3>Could not load detections</h3><p>Check the ML API and try again.</p></div>';
-          WebShield.toast("Refresh failed", "Unable to fetch ML detections.", "danger");
+          grid.innerHTML = `<div class="error-state" style="grid-column: 1 / -1;">
+            <i class="fas fa-circle-xmark"></i><h3>Could not load detections</h3><p>Check the ML API and try again.</p>
+          </div>`;
+          if (showToast) WebShield.toast('Refresh failed', 'Unable to fetch ML detections.', 'danger');
         });
     }
 
-    function runAnalysis() {
-      const button = document.getElementById("analyzeButton");
-      button.disabled = true;
-      button.innerHTML = '<span class="spinner"></span> Analyzing';
-      fetch("{{ url_for('ml_analyze_json') }}", { method: "POST" })
-        .then((response) => response.json())
-        .then((data) => {
-          WebShield.toast("Analysis complete", `${data.detections_stored || 0} detections stored.`, data.success ? "success" : "warning");
-          return Promise.all([loadStats(), loadDetections(false)]);
-        })
-        .catch(() => WebShield.toast("Analysis failed", "The JSON analysis endpoint returned an error.", "danger"))
-        .finally(() => {
-          button.disabled = false;
-          button.innerHTML = '<i class="fas fa-play"></i> Run Analysis';
-        });
-    }
-
-    function clearDetections() {
-      const button = document.getElementById("confirmClearDetections");
-      button.disabled = true;
-      button.innerHTML = '<span class="spinner"></span> Clearing';
-      fetch("{{ url_for('clear_ml_detections') }}", { method: "DELETE" })
-        .then((response) => response.json())
-        .then((data) => {
-          WebShield.closeDialog("clearDetectionsDialog");
-          WebShield.toast("Detections cleared", data.message || "All ML detections were removed.", "success");
-          return Promise.all([loadStats(), loadDetections(false)]);
-        })
-        .catch(() => WebShield.toast("Clear failed", "Unable to delete ML detections.", "danger"))
-        .finally(() => {
-          button.disabled = false;
-          button.innerHTML = '<i class="fas fa-trash"></i> Clear Detections';
-        });
-    }
-
-    document.getElementById("detectionsGrid").addEventListener("click", (event) => {
-      const card = event.target.closest("[data-detection-id]");
-      if (!card) return;
-      const detection = detections.find((item) => Number(item.id) === Number(card.dataset.detectionId));
-      if (!detection) return;
+    function openDetectionDetail(detection) {
       const pct = Math.round(Number(detection.probability || 0) * 100);
-      document.getElementById("detectionPanelTitle").textContent = `${label(detection.attack_type)} #${detection.id}`;
-      document.getElementById("detectionPanelBody").innerHTML = `
+      document.getElementById('detectionPanelTitle').textContent = `${label(detection.attack_type)} #${detection.id}`;
+      document.getElementById('detectionPanelBody').innerHTML = `
         <div class="stack-lg">
           <div class="cluster">
             <span class="badge ${riskTone(detection.severity, detection.probability)}">${WebShield.escapeHTML(label(detection.severity))}</span>
             <span class="badge neutral">${pct}% confidence</span>
           </div>
           <div class="stack">
-            <div><span class="form-label">Source IP</span><p class="mono">${WebShield.escapeHTML(detection.source_ip || "Unknown")}</p></div>
-            <div><span class="form-label">Detected At</span><p>${WebShield.escapeHTML(detection.detected_at || detection.timestamp || "Unknown")}</p></div>
+            <div><span class="form-label">Source IP</span><p class="mono">${WebShield.escapeHTML(detection.source_ip || 'Unknown')}</p></div>
+            <div><span class="form-label">Detected At</span><p>${WebShield.escapeHTML(detection.detected_at || detection.timestamp || 'Unknown')}</p></div>
             <div><span class="form-label">Attack Type</span><p>${WebShield.escapeHTML(label(detection.attack_type))}</p></div>
-            <div class="prob-wrap"><div class="prob-label"><span>Probability</span><strong>${pct}%</strong></div><div class="prob-track"><div class="prob-fill" style="width:${pct}%"></div></div></div>
+            <div class="prob-wrap">
+              <div class="prob-label"><span>Probability</span><strong>${pct}%</strong></div>
+              <div class="prob-track"><div class="prob-fill" style="width:${pct}%"></div></div>
+            </div>
           </div>
         </div>`;
-      WebShield.openPanel("detectionPanel");
+      WebShield.openPanel('detectionPanel');
+    }
+
+    function runAnalysis() {
+      const btn = document.getElementById('analyzeButton');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Analyzing…';
+      fetch('{{ url_for("ml_analyze_json") }}', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          WebShield.toast('Analysis complete', `${data.detections_stored || 0} detections stored.`, data.success ? 'success' : 'warning');
+          return Promise.all([loadStats(), loadDetections(false)]);
+        })
+        .catch(() => WebShield.toast('Analysis failed', 'The JSON analysis endpoint returned an error.', 'danger'))
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-play"></i> Run Analysis';
+        });
+    }
+
+    function clearDetections() {
+      const btn = document.getElementById('confirmClearDetections');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Clearing…';
+      fetch('{{ url_for("clear_ml_detections") }}', { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+          WebShield.closeDialog('clearDetectionsDialog');
+          WebShield.toast('Detections cleared', data.message || 'All ML detections were removed.', 'success');
+          return Promise.all([loadStats(), loadDetections(false)]);
+        })
+        .catch(() => WebShield.toast('Clear failed', 'Unable to delete ML detections.', 'danger'))
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-trash"></i> Clear Detections';
+        });
+    }
+
+    /* Click / keyboard detection cards */
+    document.getElementById('detectionsGrid').addEventListener('click', e => {
+      const card = e.target.closest('[data-detection-id]');
+      if (!card) return;
+      const d = detections.find(x => Number(x.id) === Number(card.dataset.detectionId));
+      if (d) openDetectionDetail(d);
+    });
+    document.getElementById('detectionsGrid').addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('[data-detection-id]');
+      if (!card) return;
+      e.preventDefault();
+      const d = detections.find(x => Number(x.id) === Number(card.dataset.detectionId));
+      if (d) openDetectionDetail(d);
     });
 
-    document.getElementById("refreshDetections").addEventListener("click", () => {
-      loadStats();
-      loadDetections(true);
-    });
-    document.getElementById("analyzeButton").addEventListener("click", runAnalysis);
-    document.getElementById("confirmClearDetections").addEventListener("click", clearDetections);
-    document.getElementById("validateUpload").addEventListener("click", () => {
-      const input = document.getElementById("telemetryFile");
+    document.getElementById('refreshDetections').addEventListener('click', () => { loadStats(); loadDetections(true); });
+    document.getElementById('analyzeButton').addEventListener('click', runAnalysis);
+    document.getElementById('confirmClearDetections').addEventListener('click', clearDetections);
+    document.getElementById('validateUpload').addEventListener('click', () => {
+      const input = document.getElementById('telemetryFile');
       if (!input.files || !input.files.length) {
-        WebShield.toast("No file selected", "Choose a JSON or CSV telemetry file first.", "warning");
+        WebShield.toast('No file selected', 'Choose a JSON or CSV telemetry file first.', 'warning');
         return;
       }
-      WebShield.toast("File looks ready", "Frontend validation passed. Backend import can be added next.", "success");
+      WebShield.toast('File looks ready', 'Frontend validation passed. Backend import can be added next.', 'success');
     });
 
+    /* Boot + auto-refresh */
     loadStatus();
     loadStats();
     loadDetections(false);

@@ -1,283 +1,364 @@
+/**
+ * WebShield — Core UI Runtime
+ * Handles: theme, sidebar, menus, search, tabs, dialogs, panels, toasts, file uploads
+ */
 (function () {
-  const THEME_KEY = "ws-theme";
-  const SIDEBAR_KEY = "ws-sidebar-collapsed";
+  'use strict';
 
+  const THEME_KEY   = 'ws-theme';
+  const SIDEBAR_KEY = 'ws-sidebar-collapsed';
+
+  /* ── Helpers ─────────────────────────────────────────────── */
   function prefersDark() {
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
   function getStoredTheme() {
     try {
-      const value = localStorage.getItem(THEME_KEY);
-      return value === "dark" || value === "light" ? value : null;
-    } catch (error) {
-      return null;
-    }
+      const v = localStorage.getItem(THEME_KEY);
+      return v === 'dark' || v === 'light' ? v : null;
+    } catch { return null; }
   }
 
   function storeTheme(theme) {
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-    } catch (error) {}
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
   }
 
+  function escapeHTML(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#039;');
+  }
+
+  /* ── Theme ───────────────────────────────────────────────── */
   function setTheme(theme) {
-    const previous = document.documentElement.getAttribute("data-theme");
-    document.documentElement.setAttribute("data-theme", theme);
+    const previous = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', theme);
     syncThemeButtons(theme);
     if (previous && previous !== theme) {
-      window.dispatchEvent(new CustomEvent("themechange", { detail: { theme } }));
+      window.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
     }
   }
 
   function syncThemeButtons(theme) {
-    const dark = theme === "dark";
-    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-      button.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-      button.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
-      button.dataset.tooltip = dark ? "Light mode" : "Dark mode";
+    const isDark = theme === 'dark';
+    document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
+      btn.innerHTML = isDark
+        ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
+      btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      btn.dataset.tooltip = isDark ? 'Light mode' : 'Dark mode';
     });
   }
 
   function initTheme() {
-    const theme = getStoredTheme() || (prefersDark() ? "dark" : "light");
+    const theme = getStoredTheme() || (prefersDark() ? 'dark' : 'light');
     setTheme(theme);
-    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+
+    document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         storeTheme(next);
         setTheme(next);
       });
     });
 
     if (window.matchMedia) {
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (event) => {
-        if (!getStoredTheme()) setTheme(event.matches ? "dark" : "light");
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!getStoredTheme()) setTheme(e.matches ? 'dark' : 'light');
       });
     }
   }
 
+  /* ── Sidebar ─────────────────────────────────────────────── */
   function initSidebar() {
-    const sidebar = document.querySelector(".sidebar");
-    const backdrop = document.querySelector(".sidebar-backdrop");
-    const openButtons = document.querySelectorAll("[data-sidebar-open]");
-    const closeButtons = document.querySelectorAll("[data-sidebar-close]");
-    const collapseButton = document.querySelector("[data-sidebar-collapse]");
+    const sidebar  = document.querySelector('.sidebar');
+    const backdrop = document.querySelector('.sidebar-backdrop');
+    const openBtns = document.querySelectorAll('[data-sidebar-open]');
+    const closeBtns = document.querySelectorAll('[data-sidebar-close]');
+    const collapseBtn = document.querySelector('[data-sidebar-collapse]');
 
+    /* Restore collapsed state */
     try {
-      if (localStorage.getItem(SIDEBAR_KEY) === "true") {
-        document.body.dataset.sidebarCollapsed = "true";
+      if (localStorage.getItem(SIDEBAR_KEY) === 'true') {
+        document.body.dataset.sidebarCollapsed = 'true';
       }
-    } catch (error) {}
+    } catch {}
 
     function openSidebar() {
       if (!sidebar || !backdrop) return;
-      sidebar.classList.add("open");
-      backdrop.classList.add("open");
-      document.body.style.overflow = "hidden";
+      sidebar.classList.add('open');
+      backdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
     }
 
     function closeSidebar() {
       if (!sidebar || !backdrop) return;
-      sidebar.classList.remove("open");
-      backdrop.classList.remove("open");
-      document.body.style.overflow = "";
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+      document.body.style.overflow = '';
     }
 
-    openButtons.forEach((button) => button.addEventListener("click", openSidebar));
-    closeButtons.forEach((button) => button.addEventListener("click", closeSidebar));
-    document.querySelectorAll(".sidebar .nav-link").forEach((link) => {
-      link.addEventListener("click", () => {
+    openBtns.forEach(btn => btn.addEventListener('click', openSidebar));
+    closeBtns.forEach(btn => btn.addEventListener('click', closeSidebar));
+
+    /* Close on nav link click (mobile) */
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+      link.addEventListener('click', () => {
         if (window.innerWidth <= 900) closeSidebar();
       });
     });
 
-    if (collapseButton) {
-      collapseButton.addEventListener("click", () => {
-        const collapsed = document.body.dataset.sidebarCollapsed !== "true";
-        document.body.dataset.sidebarCollapsed = collapsed ? "true" : "false";
-        try {
-          localStorage.setItem(SIDEBAR_KEY, collapsed ? "true" : "false");
-        } catch (error) {}
+    /* Collapse toggle (desktop) */
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', () => {
+        const collapsed = document.body.dataset.sidebarCollapsed !== 'true';
+        document.body.dataset.sidebarCollapsed = String(collapsed);
+        try { localStorage.setItem(SIDEBAR_KEY, String(collapsed)); } catch {}
       });
     }
 
-    window.addEventListener("resize", () => {
+    /* Close on resize */
+    window.addEventListener('resize', () => {
       if (window.innerWidth > 900) closeSidebar();
     });
   }
 
+  /* ── Dropdown Menus ──────────────────────────────────────── */
   function initMenus() {
-    const toggles = document.querySelectorAll("[data-menu-toggle]");
+    const toggles = document.querySelectorAll('[data-menu-toggle]');
 
     function closeMenus(exceptId) {
-      document.querySelectorAll(".menu-panel").forEach((panel) => {
-        if (panel.id !== exceptId) panel.hidden = true;
+      document.querySelectorAll('.menu-panel').forEach(p => {
+        if (p.id !== exceptId) p.hidden = true;
       });
     }
 
-    toggles.forEach((toggle) => {
-      toggle.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const id = toggle.getAttribute("data-menu-toggle");
+    toggles.forEach(toggle => {
+      toggle.addEventListener('click', e => {
+        e.stopPropagation();
+        const id    = toggle.getAttribute('data-menu-toggle');
         const panel = document.getElementById(id);
         if (!panel) return;
         const willOpen = panel.hidden;
         closeMenus(id);
         panel.hidden = !willOpen;
+        if (!panel.hidden) {
+          /* Focus first focusable item */
+          const first = panel.querySelector('a, button');
+          if (first) requestAnimationFrame(() => first.focus());
+        }
       });
     });
 
-    document.addEventListener("click", () => closeMenus());
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeMenus();
+    document.addEventListener('click', () => closeMenus());
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeMenus();
+      /* Arrow key nav within open menu */
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const openMenu = document.querySelector('.menu-panel:not([hidden])');
+        if (!openMenu) return;
+        const items = [...openMenu.querySelectorAll('a, button')];
+        const idx   = items.indexOf(document.activeElement);
+        const next  = e.key === 'ArrowDown'
+          ? items[(idx + 1) % items.length]
+          : items[(idx - 1 + items.length) % items.length];
+        if (next) { e.preventDefault(); next.focus(); }
+      }
     });
   }
 
+  /* ── Global Search ───────────────────────────────────────── */
   function initGlobalSearch() {
-    const input = document.querySelector("[data-global-search]");
+    const input = document.querySelector('[data-global-search]');
     if (!input) return;
 
-    input.addEventListener("input", () => {
-      const query = input.value.trim().toLowerCase();
-      const items = document.querySelectorAll("[data-searchable]");
-      items.forEach((item) => {
-        const text = (item.getAttribute("data-searchable") || item.textContent || "").toLowerCase();
-        item.hidden = query.length > 0 && !text.includes(query);
-      });
-      window.dispatchEvent(new CustomEvent("webshield:search", { detail: { query } }));
+    let debounce;
+    input.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        const query = input.value.trim().toLowerCase();
+        document.querySelectorAll('[data-searchable]').forEach(item => {
+          const text = (item.getAttribute('data-searchable') || item.textContent || '').toLowerCase();
+          item.hidden = query.length > 0 && !text.includes(query);
+        });
+        window.dispatchEvent(new CustomEvent('webshield:search', { detail: { query } }));
+      }, 120);
+    });
+
+    /* Keyboard shortcut: "/" to focus search */
+    document.addEventListener('keydown', e => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
     });
   }
 
+  /* ── Tabs ────────────────────────────────────────────────── */
   function initTabs() {
-    document.querySelectorAll("[data-tabs]").forEach((tabset) => {
-      const buttons = tabset.querySelectorAll("[data-tab-target]");
-      buttons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const target = button.getAttribute("data-tab-target");
-          buttons.forEach((candidate) => {
-            const active = candidate === button;
-            candidate.classList.toggle("active", active);
-            candidate.setAttribute("aria-selected", active ? "true" : "false");
+    document.querySelectorAll('[data-tabs]').forEach(tabset => {
+      const buttons = tabset.querySelectorAll('[data-tab-target]');
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab-target');
+
+          buttons.forEach(candidate => {
+            const active = candidate === btn;
+            candidate.classList.toggle('active', active);
+            candidate.setAttribute('aria-selected', String(active));
           });
 
-          document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
-            panel.hidden = panel.getAttribute("data-tab-panel") !== target;
+          document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+            panel.hidden = panel.getAttribute('data-tab-panel') !== target;
           });
+        });
+
+        /* Arrow key navigation between tabs */
+        btn.addEventListener('keydown', e => {
+          const btns = [...buttons];
+          const idx  = btns.indexOf(btn);
+          if (e.key === 'ArrowRight') { e.preventDefault(); btns[(idx + 1) % btns.length]?.click(); }
+          if (e.key === 'ArrowLeft')  { e.preventDefault(); btns[(idx - 1 + btns.length) % btns.length]?.click(); }
         });
       });
     });
   }
 
+  /* ── File Uploads ────────────────────────────────────────── */
   function initFileUploads() {
-    document.querySelectorAll("[data-file-input]").forEach((input) => {
-      input.addEventListener("change", () => {
+    document.querySelectorAll('[data-file-input]').forEach(input => {
+      input.addEventListener('change', () => {
         const label = document.querySelector(`[data-file-label="${input.id}"]`);
         if (!label) return;
-        label.textContent = input.files && input.files.length ? input.files[0].name : "Choose JSON or CSV file";
-        if (input.files && input.files.length && window.WebShield) {
-          window.WebShield.toast("File staged", `${input.files[0].name} is ready for upload review.`, "info");
+        if (input.files && input.files.length) {
+          label.textContent = input.files[0].name;
+          if (window.WebShield) {
+            WebShield.toast('File staged', `${input.files[0].name} is ready for review.`, 'info');
+          }
+        } else {
+          label.textContent = 'Choose JSON or CSV file';
         }
       });
+
+      /* Drag-over visual feedback */
+      const zone = input.closest('.file-upload');
+      if (zone) {
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--blue)'; });
+        zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+        zone.addEventListener('drop', () => { zone.style.borderColor = ''; });
+      }
     });
   }
 
-  function escapeHTML(value) {
-    return String(value == null ? "" : value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
+  /* ── Toast Notifications ─────────────────────────────────── */
   function toast(title, message, type) {
-    const region = document.querySelector(".toast-region");
+    const region = document.querySelector('.toast-region');
     if (!region) return;
-    const tone = type || "info";
-    const icon = tone === "success" ? "fa-circle-check" : tone === "warning" ? "fa-triangle-exclamation" : tone === "danger" ? "fa-circle-xmark" : "fa-circle-info";
-    const node = document.createElement("div");
+
+    const tone = type || 'info';
+    const icons = { success: 'fa-circle-check', warning: 'fa-triangle-exclamation', danger: 'fa-circle-xmark', info: 'fa-circle-info' };
+    const icon  = icons[tone] || 'fa-circle-info';
+
+    const node = document.createElement('div');
     node.className = `toast ${tone}`;
-    node.setAttribute("role", "status");
+    node.setAttribute('role', 'status');
     node.innerHTML = `
       <i class="fas ${icon}" aria-hidden="true"></i>
       <div>
         <strong>${escapeHTML(title)}</strong>
-        <span>${escapeHTML(message || "")}</span>
+        <span>${escapeHTML(message || '')}</span>
       </div>`;
+
     region.appendChild(node);
+
+    /* Auto-dismiss */
+    const DURATION = 4200;
     setTimeout(() => {
-      node.style.opacity = "0";
-      node.style.transform = "translateY(8px)";
-      setTimeout(() => node.remove(), 180);
-    }, 4200);
+      node.style.opacity = '0';
+      node.style.transform = 'translateY(8px)';
+      setTimeout(() => node.remove(), 200);
+    }, DURATION);
   }
 
+  /* ── Dialogs ─────────────────────────────────────────────── */
   function openDialog(id) {
-    const dialog = document.getElementById(id);
+    const dialog   = document.getElementById(id);
     const backdrop = document.querySelector(`[data-dialog-backdrop="${id}"]`);
     if (!dialog || !backdrop) return;
-    dialog.classList.add("open");
-    backdrop.classList.add("open");
-    dialog.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
-    const focusable = dialog.querySelector("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
-    if (focusable) focusable.focus();
+    dialog.classList.add('open');
+    backdrop.classList.add('open');
+    dialog.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    const focusable = dialog.querySelector('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable) requestAnimationFrame(() => focusable.focus());
   }
 
   function closeDialog(id) {
-    const dialog = document.getElementById(id);
+    const dialog   = document.getElementById(id);
     const backdrop = document.querySelector(`[data-dialog-backdrop="${id}"]`);
     if (!dialog || !backdrop) return;
-    dialog.classList.remove("open");
-    backdrop.classList.remove("open");
-    dialog.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
+    dialog.classList.remove('open');
+    backdrop.classList.remove('open');
+    dialog.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
   }
 
+  /* ── Side Panels ─────────────────────────────────────────── */
   function openPanel(id) {
-    const panel = document.getElementById(id);
+    const panel    = document.getElementById(id);
     const backdrop = document.querySelector(`[data-panel-backdrop="${id}"]`);
     if (!panel || !backdrop) return;
-    panel.classList.add("open");
-    backdrop.classList.add("open");
-    panel.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+    panel.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    const focusable = panel.querySelector('button:not([disabled]), [href], input');
+    if (focusable) requestAnimationFrame(() => focusable.focus());
   }
 
   function closePanel(id) {
-    const panel = document.getElementById(id);
+    const panel    = document.getElementById(id);
     const backdrop = document.querySelector(`[data-panel-backdrop="${id}"]`);
     if (!panel || !backdrop) return;
-    panel.classList.remove("open");
-    backdrop.classList.remove("open");
-    panel.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
   }
 
+  /* ── Dismissable Wiring ──────────────────────────────────── */
   function initDismissables() {
-    document.querySelectorAll("[data-dialog-close]").forEach((button) => {
-      button.addEventListener("click", () => closeDialog(button.getAttribute("data-dialog-close")));
+    document.querySelectorAll('[data-dialog-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeDialog(btn.getAttribute('data-dialog-close')));
     });
-    document.querySelectorAll("[data-dialog-open]").forEach((button) => {
-      button.addEventListener("click", () => openDialog(button.getAttribute("data-dialog-open")));
+    document.querySelectorAll('[data-dialog-open]').forEach(btn => {
+      btn.addEventListener('click', () => openDialog(btn.getAttribute('data-dialog-open')));
     });
-    document.querySelectorAll("[data-dialog-backdrop]").forEach((backdrop) => {
-      backdrop.addEventListener("click", () => closeDialog(backdrop.getAttribute("data-dialog-backdrop")));
+    document.querySelectorAll('[data-dialog-backdrop]').forEach(bd => {
+      bd.addEventListener('click', () => closeDialog(bd.getAttribute('data-dialog-backdrop')));
     });
-    document.querySelectorAll("[data-panel-close]").forEach((button) => {
-      button.addEventListener("click", () => closePanel(button.getAttribute("data-panel-close")));
+    document.querySelectorAll('[data-panel-close]').forEach(btn => {
+      btn.addEventListener('click', () => closePanel(btn.getAttribute('data-panel-close')));
     });
-    document.querySelectorAll("[data-panel-backdrop]").forEach((backdrop) => {
-      backdrop.addEventListener("click", () => closePanel(backdrop.getAttribute("data-panel-backdrop")));
+    document.querySelectorAll('[data-panel-backdrop]').forEach(bd => {
+      bd.addEventListener('click', () => closePanel(bd.getAttribute('data-panel-backdrop')));
     });
-    document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape") return;
-      document.querySelectorAll(".dialog.open").forEach((dialog) => closeDialog(dialog.id));
-      document.querySelectorAll(".side-panel.open").forEach((panel) => closePanel(panel.id));
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      document.querySelectorAll('.dialog.open').forEach(d => closeDialog(d.id));
+      document.querySelectorAll('.side-panel.open').forEach(p => closePanel(p.id));
     });
   }
 
+  /* ── Public API ──────────────────────────────────────────── */
   window.WebShield = {
     escapeHTML,
     toast,
@@ -287,7 +368,8 @@
     closePanel
   };
 
-  document.addEventListener("DOMContentLoaded", () => {
+  /* ── Boot ────────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initSidebar();
     initMenus();

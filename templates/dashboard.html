@@ -5,6 +5,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Metric cards -->
 <section class="metric-grid" aria-label="Attack stream analytics">
   <article class="metric-card" style="--metric-color: var(--blue);" data-searchable="total logs all captured events">
     <div class="metric-head">
@@ -29,7 +30,7 @@
       <span class="metric-icon"><i class="fas fa-triangle-exclamation"></i></span>
     </div>
     <div class="metric-footer">
-      <span>Highest severity events</span>
+      <span>High severity events</span>
       <span class="badge danger">Priority</span>
     </div>
   </article>
@@ -62,7 +63,7 @@
     </div>
   </article>
 
-  <article class="metric-card" style="--metric-color: var(--amber);" data-searchable="burp suite logged attacks">
+  <article class="metric-card" style="--metric-color: var(--amber);" data-searchable="burp suite proxy attacks">
     <div class="metric-head">
       <div>
         <div class="metric-kicker">Burp Suite</div>
@@ -76,7 +77,7 @@
     </div>
   </article>
 
-  <article class="metric-card" style="--metric-color: var(--green);" data-searchable="nmap scan events">
+  <article class="metric-card" style="--metric-color: var(--green);" data-searchable="nmap scan events recon">
     <div class="metric-head">
       <div>
         <div class="metric-kicker">Nmap</div>
@@ -91,7 +92,10 @@
   </article>
 </section>
 
-<section class="layout-grid">
+<!-- Table + sidebar -->
+<section class="layout-grid" aria-label="Event log and distribution">
+
+  <!-- Event log -->
   <article class="table-panel" data-searchable="attack logs table filters pagination">
     <div class="panel-head">
       <div class="panel-title">
@@ -101,14 +105,14 @@
           <p>Filter, inspect, and open payload details without leaving the stream.</p>
         </div>
       </div>
-      <button class="button sm" type="button" id="refreshLogs">
-        <i class="fas fa-rotate"></i>
-        Refresh
+      <button class="button sm" type="button" id="refreshLogs" aria-label="Refresh logs">
+        <i class="fas fa-rotate"></i> Refresh
       </button>
     </div>
 
+    <!-- Toolbar: filters + limit -->
     <div class="toolbar">
-      <div class="toolbar-group" id="filterTabs" data-tabs aria-label="Attack type filters">
+      <div class="toolbar-group" id="filterTabs" data-tabs aria-label="Filter by attack type">
         <button class="chip active" type="button" data-filter="all">All</button>
         <button class="chip" type="button" data-filter="brute_force"><i class="fas fa-user-slash"></i> Brute Force</button>
         <button class="chip" type="button" data-filter="sql_injection"><i class="fas fa-database"></i> SQL Injection</button>
@@ -117,7 +121,7 @@
       </div>
       <div class="toolbar-group">
         <label class="sr-only" for="limitSelect">Log limit</label>
-        <select class="select" id="limitSelect" style="width: 118px;">
+        <select class="select" id="limitSelect" style="width: 120px;" aria-label="Number of logs to display">
           <option value="25">25 logs</option>
           <option value="50" selected>50 logs</option>
           <option value="100">100 logs</option>
@@ -125,6 +129,7 @@
       </div>
     </div>
 
+    <!-- Table -->
     <div class="table-wrap">
       <table class="data-table">
         <thead>
@@ -132,7 +137,7 @@
             <th>Severity</th>
             <th>Type</th>
             <th>Target</th>
-            <th>Source</th>
+            <th>Source IP</th>
             <th>Time</th>
             <th></th>
           </tr>
@@ -140,7 +145,7 @@
         <tbody id="logRows">
           <tr>
             <td colspan="6">
-              <div class="stack">
+              <div class="stack" style="padding: var(--s4);">
                 <div class="skeleton line"></div>
                 <div class="skeleton line" style="width: 84%;"></div>
                 <div class="skeleton line" style="width: 68%;"></div>
@@ -150,40 +155,45 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination -->
     <div class="pagination">
-      <span id="pageSummary">Loading logs...</span>
-      <div class="pagination-controls">
-        <button type="button" id="prevPage" aria-label="Previous page"><i class="fas fa-chevron-left"></i></button>
-        <button type="button" id="nextPage" aria-label="Next page"><i class="fas fa-chevron-right"></i></button>
+      <span id="pageSummary" aria-live="polite">Loading logs…</span>
+      <div class="pagination-controls" role="navigation" aria-label="Table pagination">
+        <button type="button" id="prevPage" aria-label="Previous page" disabled><i class="fas fa-chevron-left"></i></button>
+        <button type="button" id="nextPage" aria-label="Next page" disabled><i class="fas fa-chevron-right"></i></button>
       </div>
     </div>
   </article>
 
+  <!-- Sidebar: distribution + endpoints -->
   <div class="stack-lg">
-    <article class="panel" data-searchable="attack type distribution burp nmap sql brute">
+    <!-- Attack distribution -->
+    <article class="panel" data-searchable="attack type distribution chart bars">
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-icon" style="--metric-color: var(--cyan);"><i class="fas fa-chart-simple"></i></span>
           <div>
             <h2>Distribution</h2>
-            <p>Event volume by attack category.</p>
+            <p>Volume by attack category.</p>
           </div>
         </div>
       </div>
       <div class="panel-body">
         <div class="mini-bars" id="attackBars">
-          <div class="skeleton block"></div>
+          <div class="skeleton block" aria-hidden="true"></div>
         </div>
       </div>
     </article>
 
-    <article class="panel" data-searchable="api integrations endpoint setup">
+    <!-- Ingest endpoints -->
+    <article class="panel" data-searchable="api ingest endpoints push scanner findings">
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-icon" style="--metric-color: var(--indigo);"><i class="fas fa-plug"></i></span>
           <div>
             <h2>Ingest Endpoints</h2>
-            <p>Use these routes to push external scanner findings.</p>
+            <p>Push external scanner findings via these routes.</p>
           </div>
         </div>
       </div>
@@ -211,6 +221,7 @@
   </div>
 </section>
 
+<!-- Log detail side panel -->
 <div class="side-panel-backdrop" data-panel-backdrop="logDetailPanel"></div>
 <aside class="side-panel" id="logDetailPanel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="logDetailTitle">
   <div class="side-panel-head">
@@ -218,14 +229,16 @@
       <span class="eyebrow">Log Detail</span>
       <h2 class="section-title" id="logDetailTitle">Event</h2>
     </div>
-    <button class="icon-button" type="button" data-panel-close="logDetailPanel" aria-label="Close details">
+    <button class="icon-button" type="button" data-panel-close="logDetailPanel" aria-label="Close log detail">
       <i class="fas fa-xmark"></i>
     </button>
   </div>
   <div class="side-panel-body" id="logDetailBody"></div>
   <div class="side-panel-foot">
     <button class="button" type="button" data-panel-close="logDetailPanel">Close</button>
-    <button class="button primary" type="button" id="copyLogButton"><i class="fas fa-copy"></i> Copy JSON</button>
+    <button class="button primary" type="button" id="copyLogButton">
+      <i class="fas fa-copy"></i> Copy JSON
+    </button>
   </div>
 </aside>
 {% endblock %}
@@ -234,196 +247,216 @@
 <script>
   (function () {
     const initialLogs = {{ logs_json|default([])|tojson }};
-    let logs = initialLogs;
-    let filter = "all";
-    let page = 1;
+    let logs   = initialLogs;
+    let filter = 'all';
+    let page   = 1;
     const pageSize = 10;
     let selectedLog = null;
 
-    const rows = document.getElementById("logRows");
-    const summary = document.getElementById("pageSummary");
-    const prev = document.getElementById("prevPage");
-    const next = document.getElementById("nextPage");
-    const limit = document.getElementById("limitSelect");
+    const rows    = document.getElementById('logRows');
+    const summary = document.getElementById('pageSummary');
+    const prev    = document.getElementById('prevPage');
+    const next    = document.getElementById('nextPage');
+    const limit   = document.getElementById('limitSelect');
 
     function label(value) {
-      return String(value || "unknown").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return String(value || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
     function severityTone(severity) {
-      const value = String(severity || "medium").toLowerCase();
-      if (value === "critical") return "danger";
-      if (value === "high") return "warning";
-      if (value === "low") return "success";
-      return "blue";
+      const v = String(severity || 'medium').toLowerCase();
+      if (v === 'critical') return 'danger';
+      if (v === 'high')     return 'warning';
+      if (v === 'low')      return 'success';
+      return 'blue';
     }
 
-    function time(value) {
-      if (!value) return "Unknown";
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+    function timeStr(value) {
+      if (!value) return 'Unknown';
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? value : d.toLocaleString();
     }
 
     function getFiltered() {
-      return filter === "all" ? logs : logs.filter((log) => log.attack_type === filter);
+      return filter === 'all' ? logs : logs.filter(l => l.attack_type === filter);
     }
 
     function renderRows() {
-      const filtered = getFiltered();
+      const filtered   = getFiltered();
       const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
       if (page > totalPages) page = totalPages;
-      const start = (page - 1) * pageSize;
+      const start    = (page - 1) * pageSize;
       const pageRows = filtered.slice(start, start + pageSize);
 
       if (!pageRows.length) {
-        rows.innerHTML = `
-          <tr>
-            <td colspan="6">
-              <div class="empty-state">
-                <i class="fas fa-satellite-dish"></i>
-                <h3>No logs found</h3>
-                <p>There are no attack events for this filter yet. New records will appear automatically.</p>
+        rows.innerHTML = `<tr><td colspan="6">
+          <div class="empty-state">
+            <i class="fas fa-satellite-dish"></i>
+            <h3>No logs found</h3>
+            <p>There are no attack events for this filter yet. New records will appear automatically.</p>
+          </div></td></tr>`;
+      } else {
+        rows.innerHTML = pageRows.map(log => {
+          const sev = String(log.severity || 'medium').toLowerCase();
+          const searchable = [log.attack_type, log.severity, log.source_ip, log.target_url, log.target_host, log.description, log.payload].join(' ');
+          return `<tr class="severity-${WebShield.escapeHTML(sev)}" data-searchable="${WebShield.escapeHTML(searchable)}">
+            <td>
+              <span class="cluster nowrap">
+                <span class="severity-marker" aria-hidden="true"></span>
+                <span class="badge ${severityTone(sev)}">${WebShield.escapeHTML(label(sev))}</span>
+              </span>
+            </td>
+            <td>
+              <div class="cell-title">
+                <strong>${WebShield.escapeHTML(label(log.attack_type))}</strong>
+                <small>${WebShield.escapeHTML(log.method || 'N/A')}</small>
               </div>
             </td>
+            <td>
+              <div class="cell-title">
+                <strong>${WebShield.escapeHTML(log.target_host || 'Unknown host')}</strong>
+                <small>${WebShield.escapeHTML(log.target_url || 'No target URL')}</small>
+              </div>
+            </td>
+            <td><span class="mono">${WebShield.escapeHTML(log.source_ip || 'Unknown')}</span></td>
+            <td class="nowrap" style="color:var(--text-muted);">${WebShield.escapeHTML(timeStr(log.timestamp))}</td>
+            <td><button class="raw-toggle" type="button" data-log-id="${Number(log.id)}" aria-label="Open log ${Number(log.id)} details"><i class="fas fa-arrow-up-right-from-square"></i> Open</button></td>
           </tr>`;
-      } else {
-        rows.innerHTML = pageRows.map((log) => {
-          const severity = String(log.severity || "medium").toLowerCase();
-          const searchable = [log.attack_type, log.severity, log.source_ip, log.target_url, log.target_host, log.description, log.payload].join(" ");
-          return `
-            <tr class="severity-${WebShield.escapeHTML(severity)}" data-searchable="${WebShield.escapeHTML(searchable)}">
-              <td>
-                <span class="cluster nowrap">
-                  <span class="severity-marker"></span>
-                  <span class="badge ${severityTone(severity)}">${WebShield.escapeHTML(label(severity))}</span>
-                </span>
-              </td>
-              <td>
-                <div class="cell-title">
-                  <strong>${WebShield.escapeHTML(label(log.attack_type))}</strong>
-                  <small>${WebShield.escapeHTML(log.method || "N/A")}</small>
-                </div>
-              </td>
-              <td>
-                <div class="cell-title">
-                  <strong>${WebShield.escapeHTML(log.target_host || "Unknown host")}</strong>
-                  <small>${WebShield.escapeHTML(log.target_url || "No target URL")}</small>
-                </div>
-              </td>
-              <td><span class="mono">${WebShield.escapeHTML(log.source_ip || "Unknown")}</span></td>
-              <td class="nowrap">${WebShield.escapeHTML(time(log.timestamp))}</td>
-              <td><button class="raw-toggle" type="button" data-log-id="${Number(log.id)}"><i class="fas fa-arrow-up-right-from-square"></i> Open</button></td>
-            </tr>`;
-        }).join("");
+        }).join('');
       }
 
-      summary.textContent = filtered.length ? `Showing ${Math.min(start + 1, filtered.length)}-${Math.min(start + pageSize, filtered.length)} of ${filtered.length}` : "No logs";
+      summary.textContent = filtered.length
+        ? `Showing ${Math.min(start + 1, filtered.length)}–${Math.min(start + pageSize, filtered.length)} of ${filtered.length}`
+        : 'No logs';
       prev.disabled = page <= 1;
       next.disabled = page >= totalPages;
     }
 
     function renderBars(counts) {
-      const keys = ["brute_force", "sql_injection", "burp", "nmap"];
-      const max = Math.max(1, ...keys.map((key) => Number(counts[key] || 0)));
-      document.getElementById("attackBars").innerHTML = keys.map((key) => {
-        const value = Number(counts[key] || 0);
-        const width = Math.round((value / max) * 100);
-        return `
-          <div class="bar-row" data-searchable="${WebShield.escapeHTML(label(key))}">
-            <header><span>${WebShield.escapeHTML(label(key))}</span><strong>${value}</strong></header>
-            <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
-          </div>`;
-      }).join("");
+      const keys = ['brute_force', 'sql_injection', 'burp', 'nmap'];
+      const max  = Math.max(1, ...keys.map(k => Number(counts[k] || 0)));
+      document.getElementById('attackBars').innerHTML = keys.map(key => {
+        const val   = Number(counts[key] || 0);
+        const width = Math.round((val / max) * 100);
+        return `<div class="bar-row" data-searchable="${WebShield.escapeHTML(label(key))}">
+          <header>
+            <span>${WebShield.escapeHTML(label(key))}</span>
+            <strong>${val}</strong>
+          </header>
+          <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+        </div>`;
+      }).join('');
     }
 
     function openLog(log) {
       selectedLog = log;
-      document.getElementById("logDetailTitle").textContent = `${label(log.attack_type)} #${log.id}`;
-      document.getElementById("logDetailBody").innerHTML = `
+      document.getElementById('logDetailTitle').textContent = `${label(log.attack_type)} #${log.id}`;
+      document.getElementById('logDetailBody').innerHTML = `
         <div class="stack-lg">
           <div class="cluster">
             <span class="badge ${severityTone(log.severity)}">${WebShield.escapeHTML(label(log.severity))}</span>
-            <span class="badge neutral">${WebShield.escapeHTML(log.method || "N/A")}</span>
-            <span class="badge neutral">${WebShield.escapeHTML(log.status_code || "No status")}</span>
+            <span class="badge neutral">${WebShield.escapeHTML(log.method || 'N/A')}</span>
+            <span class="badge neutral">${WebShield.escapeHTML(String(log.status_code || 'No status'))}</span>
           </div>
           <div class="stack">
-            <div><span class="form-label">Description</span><p>${WebShield.escapeHTML(log.description || "No description provided.")}</p></div>
-            <div><span class="form-label">Source IP</span><p class="mono">${WebShield.escapeHTML(log.source_ip || "Unknown")}</p></div>
-            <div><span class="form-label">Target</span><p>${WebShield.escapeHTML(log.target_host || "Unknown host")} ${log.target_url ? " / " + WebShield.escapeHTML(log.target_url) : ""}</p></div>
-            <div><span class="form-label">Payload</span><pre class="raw-block">${WebShield.escapeHTML(log.payload || "No payload captured.")}</pre></div>
-            <div><span class="form-label">Raw Data</span><pre class="raw-block">${WebShield.escapeHTML(log.raw_data || "No raw data captured.")}</pre></div>
+            <div>
+              <span class="form-label">Description</span>
+              <p>${WebShield.escapeHTML(log.description || 'No description provided.')}</p>
+            </div>
+            <div>
+              <span class="form-label">Source IP</span>
+              <p class="mono">${WebShield.escapeHTML(log.source_ip || 'Unknown')}</p>
+            </div>
+            <div>
+              <span class="form-label">Target</span>
+              <p>${WebShield.escapeHTML(log.target_host || 'Unknown host')}${log.target_url ? ' / ' + WebShield.escapeHTML(log.target_url) : ''}</p>
+            </div>
+            <div>
+              <span class="form-label">Payload</span>
+              <pre class="raw-block">${WebShield.escapeHTML(log.payload || 'No payload captured.')}</pre>
+            </div>
+            <div>
+              <span class="form-label">Raw Data</span>
+              <pre class="raw-block">${WebShield.escapeHTML(log.raw_data || 'No raw data captured.')}</pre>
+            </div>
           </div>
         </div>`;
-      WebShield.openPanel("logDetailPanel");
+      WebShield.openPanel('logDetailPanel');
     }
 
     function loadLogs(showToast) {
       const params = new URLSearchParams();
-      params.set("limit", limit.value);
-      if (filter !== "all") params.set("type", filter);
-
-      return fetch(`{{ url_for('get_logs') }}?${params.toString()}`)
-        .then((response) => response.json())
-        .then((data) => {
+      params.set('limit', limit.value);
+      if (filter !== 'all') params.set('type', filter);
+      return fetch(`{{ url_for('get_logs') }}?${params}`)
+        .then(r => r.json())
+        .then(data => {
           logs = Array.isArray(data) ? data : (data.logs || []);
           page = 1;
           renderRows();
-          if (showToast) WebShield.toast("Logs refreshed", `${logs.length} events loaded.`, "success");
+          if (showToast) WebShield.toast('Logs refreshed', `${logs.length} events loaded.`, 'success');
         })
         .catch(() => {
-          rows.innerHTML = `
-            <tr><td colspan="6"><div class="error-state"><i class="fas fa-circle-xmark"></i><h3>Could not load logs</h3><p>Check that the Flask API is running and try again.</p></div></td></tr>`;
-          WebShield.toast("Refresh failed", "Unable to fetch attack logs.", "danger");
+          rows.innerHTML = `<tr><td colspan="6"><div class="error-state">
+            <i class="fas fa-circle-xmark"></i>
+            <h3>Could not load logs</h3>
+            <p>Check that the Flask API is running and try again.</p>
+          </div></td></tr>`;
+          if (showToast) WebShield.toast('Refresh failed', 'Unable to fetch attack logs.', 'danger');
         });
     }
 
     function loadStats() {
-      fetch("{{ url_for('get_stats') }}")
-        .then((response) => response.json())
-        .then((stats) => {
-          document.getElementById("stat-total").textContent = stats.total_logs || 0;
-          document.getElementById("stat-critical").textContent = stats.high_severity_alerts || 0;
+      fetch('{{ url_for("get_stats") }}')
+        .then(r => r.json())
+        .then(stats => {
+          document.getElementById('stat-total').textContent    = stats.total_logs || 0;
+          document.getElementById('stat-critical').textContent = stats.high_severity_alerts || 0;
           const types = stats.attack_types || {};
-          document.getElementById("stat-types").textContent = Object.values(types).filter((value) => Number(value) > 0).length;
-          document.getElementById("stat-burp").textContent = types.burp || 0;
-          document.getElementById("stat-nmap").textContent = types.nmap || 0;
+          document.getElementById('stat-types').textContent = Object.values(types).filter(v => Number(v) > 0).length;
+          document.getElementById('stat-burp').textContent  = types.burp || 0;
+          document.getElementById('stat-nmap').textContent  = types.nmap || 0;
           renderBars(types);
         })
         .catch(() => {});
     }
 
-    document.getElementById("filterTabs").addEventListener("click", (event) => {
-      const button = event.target.closest("[data-filter]");
-      if (!button) return;
-      filter = button.dataset.filter;
-      page = 1;
-      document.querySelectorAll("[data-filter]").forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+    /* Filter chips */
+    document.getElementById('filterTabs').addEventListener('click', e => {
+      const btn = e.target.closest('[data-filter]');
+      if (!btn) return;
+      filter = btn.dataset.filter;
+      page   = 1;
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
       loadLogs(false);
     });
 
-    rows.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-log-id]");
-      if (!button) return;
-      const id = Number(button.dataset.logId);
-      const log = logs.find((item) => Number(item.id) === id);
+    /* Open detail */
+    rows.addEventListener('click', e => {
+      const btn = e.target.closest('[data-log-id]');
+      if (!btn) return;
+      const id  = Number(btn.dataset.logId);
+      const log = logs.find(l => Number(l.id) === id);
       if (log) openLog(log);
     });
 
-    document.getElementById("refreshLogs").addEventListener("click", () => {
-      loadLogs(true);
-      loadStats();
-    });
-    limit.addEventListener("change", () => loadLogs(false));
-    prev.addEventListener("click", () => { page -= 1; renderRows(); });
-    next.addEventListener("click", () => { page += 1; renderRows(); });
-    document.getElementById("copyLogButton").addEventListener("click", () => {
+    /* Toolbar actions */
+    document.getElementById('refreshLogs').addEventListener('click', () => { loadLogs(true); loadStats(); });
+    limit.addEventListener('change', () => loadLogs(false));
+    prev.addEventListener('click', () => { page -= 1; renderRows(); });
+    next.addEventListener('click', () => { page += 1; renderRows(); });
+
+    document.getElementById('copyLogButton').addEventListener('click', () => {
       if (!selectedLog || !navigator.clipboard) return;
       navigator.clipboard.writeText(JSON.stringify(selectedLog, null, 2));
-      WebShield.toast("Copied", "Log JSON copied to clipboard.", "success");
+      WebShield.toast('Copied', 'Log JSON copied to clipboard.', 'success');
     });
 
+    /* Boot */
     renderRows();
     loadStats();
+
+    /* Auto-refresh every 15s */
     setInterval(() => {
       if (document.hidden) return;
       loadLogs(false);

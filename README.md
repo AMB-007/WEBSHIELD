@@ -1,136 +1,278 @@
-# WebShield
+# 🛡️ WebShield — Security Operations Dashboard
+
+<div align="center">
+
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-2.3-000000?style=flat-square&logo=flask&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red?style=flat-square)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3+-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)
+
+**A production-grade cybersecurity monitoring dashboard built with Flask, ML-powered threat detection, and a premium SaaS UI.**
+
+[Live Demo](#running-locally) · [Features](#features) · [API Reference](#api-reference) · [Architecture](#architecture)
+
+</div>
 
 ---
 
-## 📌 Project Overview
-**WebShield** is a robust, Flask‑based cybersecurity monitoring platform that collects, classifies, and visualises real‑time attack events such as brute‑force attempts, SQL injection, Nmap scans, and Burp Suite findings. The system persists logs in SQLite, enriches them with a pretrained Random‑Forest model for severity scoring, and exposes a clean REST API for seamless integration with external scanning tools.
+## Overview
+
+WebShield is a full-stack web security operations platform that detects, logs, and visualizes cyber attacks in real time. It ingests attack telemetry from tools like **Burp Suite**, **Nmap**, and **custom brute-force scripts**, runs them through a **Random Forest ML classifier**, and presents everything through a clean, dark-mode-capable admin console.
+
+Built as a demonstration of applied cybersecurity engineering — integrating traditional rule-based detection with machine learning classifiers for both **brute-force** and **SQL injection** attack patterns.
 
 ---
 
-## ✨ Key Features
-- **Live Attack Feed** – Real‑time log streaming with auto‑refresh every 15 seconds.
-- **Rich Dashboard** – Interactive statistics cards (total logs, critical alerts, unique IPs, per‑attack‑type counts) with glass‑morphism design and dark‑mode support.
-- **Extensible API** – Endpoints for brute‑force, SQL injection, Burp Suite, and Nmap logs; plus a summary endpoint for attack‑type counts.
-- **Machine‑Learning Classification** – Random‑Forest model automatically assigns severity (low, medium, high, critical).
-- **Modular Architecture** – Clear separation of concerns (Flask routes, SQLAlchemy models, front‑end assets).
-- **Container‑ready** – Easy to run locally or in production via Gunicorn/UWSGI and Nginx.
+## Features
+
+### 🔍 Attack Detection
+| Feature | Details |
+|---|---|
+| **Brute Force Detection** | Tracks failed login attempts per IP, time windows, failure rates |
+| **SQL Injection Detection** | ML-powered payload analysis on username and password fields |
+| **Nmap Scan Logging** | Accepts scan results via REST API |
+| **Burp Suite Integration** | Receives proxy findings via webhook endpoint |
+
+### 🤖 Machine Learning
+| Feature | Details |
+|---|---|
+| **Random Forest Classifier** | Trained on labeled brute-force and SQL injection datasets |
+| **Confidence Scoring** | Probability scores (0.0–1.0) for every detection |
+| **Severity Mapping** | Critical / High / Medium / Low derived from ML probability |
+| **Real-time Analysis** | Triggered via dashboard or automatic on login events |
+
+### 📊 Dashboard
+- **Admin Dashboard** — Auth stats, doughnut chart, security alerts, live activity feed
+- **Attack Stream** — Paginated event log with filter chips, payload side panel
+- **ML Analysis** — Detection cards with confidence bars, model status, file upload
+- **Log Management** — Scoped deletion with confirmation dialogs
+
+### 🎨 UI/UX
+- Light / Dark mode with system preference detection
+- Collapsible sidebar with persistent state
+- Toast notifications, side panels, confirmation dialogs
+- Global search across all visible data
+- Full keyboard navigation (arrow keys, Escape, `/` to focus search)
+- Responsive: Mobile · Tablet · Desktop · Ultra-wide
 
 ---
 
-## 🛠️ Architecture Diagram
-```mermaid
-graph LR
-    subgraph Frontend
-        UI[Dashboard UI] -->|fetch| API[/api endpoints]
-    end
-    subgraph Backend
-        Flask[Flask App] -->|ORM| DB[(SQLite / PostgreSQL)]
-        Flask -->|ML Model| Classifier[Random‑Forest]
-    end
-    subgraph External Tools
-        Nmap[Nmap Scan] -->|POST JSON| API
-        Burp[Burp Suite] -->|POST JSON| API
-        Brute[Brute‑Force Script] -->|POST JSON| API
-    end
-    API --> Flask
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Backend** | Python 3.10+, Flask 2.3, Flask-SQLAlchemy, Flask-CORS |
+| **Database** | SQLite (dev) — easily swapped for PostgreSQL/MySQL |
+| **ML** | scikit-learn, pandas, numpy, joblib |
+| **Frontend** | Vanilla HTML5, CSS3, JavaScript (ES2020+) |
+| **Icons** | Font Awesome 6.5 |
+| **Charts** | Chart.js |
+| **Fonts** | Inter + JetBrains Mono (Google Fonts) |
+
+---
+
+## Architecture
+
+```
+WebShield/
+├── app.py                    # Flask application, routes, API endpoints
+├── ml_service.py             # ML detector wrappers (brute force + SQL injection)
+├── requirements.txt
+├── .env                      # Environment variables (SECRET_KEY, DB URL, timezone)
+│
+├── static/
+│   ├── css/
+│   │   └── theme.css         # Complete design system (tokens, components, layout)
+│   └── js/
+│       └── theme-toggle.js   # UI runtime (theme, sidebar, menus, toasts, modals)
+│
+├── templates/
+│   ├── base.html             # App shell: sidebar, topbar, navigation
+│   ├── login.html            # Auth page (standalone, no base inheritance)
+│   ├── admin_dashboard.html  # Login stats, chart, alerts, quick actions
+│   ├── dashboard.html        # Attack stream: event log + distribution
+│   ├── ml_analysis.html      # ML detections, model status, file upload
+│   └── clear_logs.html       # Log management with scoped deletions
+│
+└── instance/
+    └── cybersec_logs.db      # SQLite database (auto-created)
+```
+
+### Database Models
+
+```
+AttackLog          — Raw attack events (brute force, SQL injection, Nmap, Burp)
+LoginAttempt       — Every login attempt with ML prediction fields
+MLDetection        — Stored ML classifier results linked to attacks/logins
 ```
 
 ---
 
-## 🚀 Getting Started
+## Running Locally
+
 ### Prerequisites
-- Python 3.9+ 
-- `git` (optional, for cloning)
-- (Optional) Virtual environment tool (`venv` or `conda`)
+- Python 3.10 or newer
+- pip
 
-### Installation
+### 1. Clone the repository
 ```bash
-# Clone the repository (or navigate to the existing folder)
-git clone https://github.com/your‑org/webshield.git
+git clone https://github.com/your-username/webshield.git
 cd webshield
+```
 
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+### 2. Create and activate a virtual environment
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
 
-# Install dependencies
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### Initialise the Database
-```bash
-python -c "from app import db; db.create_all()"
+### 4. Configure environment (optional)
+Create a `.env` file (or edit the existing one):
+```env
+SECRET_KEY=change-this-in-production
+DATABASE_URL=sqlite:///cybersec_logs.db
+APP_TIMEZONE=Asia/Kolkata
 ```
-A SQLite file `app.db` will be created in the project root.
 
-### Run the Development Server
+### 5. Start the server
 ```bash
 python app.py
 ```
-Open your browser at **http://localhost:5000/dashboard**.
+
+The app will be available at **http://localhost:5000**
+
+### 6. Login
+Use the demo credentials:
+- **Username:** `admin`
+- **Password:** `admin123`
 
 ---
 
-## 📚 API Reference
-| Endpoint | Method | Payload Example | Description |
-|----------|--------|----------------|-------------|
-| `/api/logs/brute_force` | POST | `{ "source_ip": "1.2.3.4", "target_url": "/login", "payload": "user=admin" }` | Record a brute‑force attempt |
-| `/api/logs/sql_injection` | POST | `{ "source_ip": "1.2.3.4", "target_url": "/search", "payload": "id=1 OR 1=1" }` | Record an SQL injection |
-| `/api/logs/burp` | POST | `{ "source_ip": "1.2.3.4", "target_url": "/api", "payload": "request body" }` | Record a Burp Suite request |
-| `/api/logs/nmap` | POST | `{ "target": "example.com", "scan_type": "-sS", "severity": "medium" }` | Record an Nmap scan |
-| `/api/attack-type-counts` | GET | – | Returns JSON with counts per attack type, e.g. `{ "burp": 3, "nmap": 2, "brute_force": 5 }` |
-| `/api/stats` | GET | – | Global statistics used by the dashboard (total logs, critical alerts, etc.) |
+## API Reference
 
----
+All API routes return JSON. Authentication is session-based (cookie).
 
-## 📦 Production Deployment
-1. **Create a production‑grade WSGI server** (Gunicorn example):
-```bash
-gunicorn -w 4 -b 0.0.0.0:8000 app:app
+### Attack Log Ingestion
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/logs/brute_force` | Log a brute-force attempt |
+| `POST` | `/api/logs/sql_injection` | Log an SQL injection event |
+| `POST` | `/api/logs/burp` | Log a Burp Suite finding |
+| `POST` | `/api/logs/nmap` | Log an Nmap scan result |
+
+**Example payload (brute force):**
+```json
+{
+  "source_ip": "192.168.1.100",
+  "target_url": "/login",
+  "target_host": "localhost:5000",
+  "payload": "username=admin&password=test123",
+  "status_code": 401,
+  "method": "POST",
+  "severity": "medium",
+  "description": "Failed login attempt"
+}
 ```
-2. **Set environment variables**:
+
+### Query Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/logs` | Fetch attack logs (`?type=&limit=`) |
+| `GET` | `/api/stats` | Aggregated counts by attack type |
+| `GET` | `/api/attack-type-counts` | Count per attack type |
+| `GET` | `/api/recent-activity` | Latest login event (for polling) |
+
+### ML Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/ml-status` | Model loaded/offline status |
+| `GET` | `/api/ml-stats` | Detection counts by type |
+| `GET` | `/api/ml-detections` | Recent ML detection records |
+| `POST` | `/api/ml-analyze-json` | Trigger analysis of `brute_force_results.json` |
+| `DELETE` | `/api/ml-detections` | Clear all ML detection records |
+
+### Log Management
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `DELETE` | `/api/clear-logs/brute-force` | Delete brute-force logs and JSON files |
+| `DELETE` | `/api/clear-logs/burp-suite` | Delete scanner logs and JSON files |
+| `DELETE` | `/api/clear-logs/all` | Delete everything (irreversible) |
+
+---
+
+## Design System
+
+WebShield uses a custom CSS design system (`theme.css`) with:
+
+- **8px spacing grid** — `--s1` (4px) through `--s16` (64px)
+- **Color palette** — Blue / Indigo / Cyan / Green / Amber / Red with dark mode variants
+- **Typography** — Inter for UI, JetBrains Mono for code
+- **Component library** — Buttons, badges, chips, cards, tables, tabs, alerts, toasts, dialogs, side panels, skeletons
+- **CSS custom properties** — Full dark/light theming via `[data-theme]` attribute
+- **Responsive breakpoints** — 600px, 900px, 1100px, 1920px
+
+---
+
+## Security Notes
+
+> [!WARNING]
+> This project is a **security research and educational tool**. Do not deploy with default credentials in production.
+
+- Change `SECRET_KEY` before deploying
+- The `admin123` password is intentionally visible for demo purposes
+- SQL injection detection may produce false positives for common legitimate usernames
+- Every login attempt (including successful ones) is logged to the database
+
+---
+
+## Testing Attacks
+
+Use the included scripts to generate test data:
+
 ```bash
-export FLASK_ENV=production
-export DATABASE_URL=postgresql://user:password@db_host/webshield
+# Simulate brute-force attack
+python brute_force_attacker.py
+
+# Generate test ML detection records
+python generate_test_detections.py
+
+# Check ML detection state
+python check_ml_detections.py
 ```
-3. **Configure a reverse proxy** (NGINX) to forward traffic to Gunicorn and serve static assets.
-4. **Persist the database** – Switch from SQLite to PostgreSQL by updating `SQLALCHEMY_DATABASE_URI` in `app.py`.
 
 ---
 
-## 🧪 Testing & Validation
-```bash
-# Run the test suite (if provided)
-pytest tests/
+## Contributing
 
-# Simple health‑check
-curl -s http://localhost:5000/api/stats | jq
-```
-Ensure the API returns a 200 status and valid JSON.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
 
 ---
 
-## 🐞 Troubleshooting
-- **No logs appear** – Verify that API requests return `200 OK` and that `app.db` (or your PostgreSQL DB) is writable.
-- **Dashboard stats stale** – Confirm the `/api/attack-type-counts` endpoint is reachable; the front‑end polls this endpoint every 15 seconds.
-- **Static assets missing** – Run the server from the project root so Flask can locate the `static/` directory.
-- **Model loading errors** – Ensure the `model.pkl` file (or equivalent) is present in the root directory and compatible with the installed scikit‑learn version.
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🤝 Contributing
-Contributions are welcome! Please follow these steps:
-1. Fork the repository and create a feature branch.
-2. Maintain the existing code style and UI design system.
-3. Add or update unit tests for new functionality.
-4. Update this README if you introduce breaking changes.
-5. Open a Pull Request with a clear description of the changes.
-
----
-
-## 📄 License
-This project is licensed under the **MIT License** – see the `LICENSE` file for details.
-
----
-
-*Happy shielding!*
+<div align="center">
+  Built with ❤️ as a cybersecurity monitoring demonstration platform.
+</div>

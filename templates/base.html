@@ -5,30 +5,38 @@
 {% set is_authenticated = session.get('authenticated') %}
 {% set display_user = session.get('username', session_username|default('Guest')) %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{{ subtitle }}">
-  <title>{% block title %}{{ title }} - WebShield{% endblock %}</title>
+  <meta name="theme-color" content="#0A0F1E">
+  <title>{% block title %}{{ title }} — WebShield{% endblock %}</title>
+
+  <!-- Prevent FOUC: apply theme before render -->
   <script>
     (function () {
       try {
-        var saved = localStorage.getItem("ws-theme");
-        var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-        document.documentElement.setAttribute("data-theme", saved === "dark" || saved === "light" ? saved : (dark ? "dark" : "light"));
-      } catch (error) {
-        document.documentElement.setAttribute("data-theme", "light");
+        var s = localStorage.getItem('ws-theme');
+        var d = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', (s === 'dark' || s === 'light') ? s : (d ? 'dark' : 'light'));
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
       }
     })();
   </script>
+
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Design System -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   {% block head %}{% endblock %}
 </head>
 <body>
+  <!-- Skip navigation -->
   <a class="skip-link" href="#main-content">Skip to content</a>
 
+  <!-- Mobile top bar -->
   <header class="mobile-bar" aria-label="Mobile navigation">
     <button class="icon-button" type="button" data-sidebar-open aria-label="Open navigation">
       <i class="fas fa-bars"></i>
@@ -37,35 +45,41 @@
       <span class="brand-mark"><i class="fas fa-shield-halved"></i></span>
       <span>WebShield</span>
     </a>
-    <button class="icon-button" type="button" data-theme-toggle aria-label="Toggle theme"></button>
+    <button class="icon-button tooltip" type="button" data-theme-toggle aria-label="Toggle theme" data-tooltip="Theme"></button>
   </header>
 
-  <div class="sidebar-backdrop" data-sidebar-close></div>
+  <!-- Sidebar backdrop (mobile) -->
+  <div class="sidebar-backdrop" data-sidebar-close role="presentation"></div>
 
   <div class="app-shell">
+    <!-- ── Sidebar ──────────────────────────────────────── -->
     <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+
+      <!-- Brand -->
       <div class="sidebar-head">
-        <a class="brand" href="{{ url_for('dashboard') }}" aria-label="WebShield">
+        <a class="brand" href="{{ url_for('dashboard') }}" aria-label="WebShield home">
           <span class="brand-mark"><i class="fas fa-shield-halved"></i></span>
           <span class="brand-copy">
             <strong>WebShield</strong>
             <small>Security OS</small>
           </span>
         </a>
-        <button class="icon-button sidebar-collapse tooltip" type="button" data-sidebar-collapse aria-label="Collapse sidebar" data-tooltip="Collapse sidebar">
+        <button class="icon-button sidebar-collapse tooltip" type="button" data-sidebar-collapse aria-label="Collapse sidebar" data-tooltip="Collapse">
           <i class="fas fa-angles-left"></i>
         </button>
       </div>
 
-      <div class="workspace-switcher" aria-label="Current workspace">
+      <!-- Workspace -->
+      <div class="workspace-switcher" aria-label="Workspace">
         <span class="workspace-avatar">WS</span>
         <span class="workspace-copy">
           <strong>Operations</strong>
-          <small>{{ "Authenticated" if is_authenticated else "Public monitor" }}</small>
+          <small>{{ 'Authenticated' if is_authenticated else 'Public monitor' }}</small>
         </span>
       </div>
 
-      <nav class="nav-groups" aria-label="Main">
+      <!-- Nav -->
+      <nav class="nav-groups" aria-label="Main navigation">
         <div class="nav-group">
           <span class="nav-label">Monitor</span>
           <a class="nav-link {{ 'active' if active == 'admin' else '' }}" href="{{ url_for('admin_dashboard') }}">
@@ -101,8 +115,9 @@
         </div>
       </nav>
 
+      <!-- Status indicator -->
       <div class="sidebar-status">
-        <span class="status-dot"></span>
+        <span class="status-dot" aria-hidden="true"></span>
         <span>
           <strong>Live ingest</strong>
           <small>Polling every 15s</small>
@@ -110,7 +125,10 @@
       </div>
     </aside>
 
+    <!-- ── Workspace ──────────────────────────────────────── -->
     <div class="workspace">
+
+      <!-- Topbar -->
       <header class="topbar">
         <div class="topbar-title">
           <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -118,76 +136,83 @@
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
             <span>{{ title }}</span>
           </nav>
-          <div>
-            <span class="eyebrow">{{ eyebrow }}</span>
-            <h1>{{ title }}</h1>
-            <p>{{ subtitle }}</p>
-          </div>
+          <span class="eyebrow">{{ eyebrow }}</span>
+          <h1>{{ title }}</h1>
+          <p>{{ subtitle }}</p>
         </div>
 
         <div class="topbar-tools">
-          <label class="global-search" for="global-search">
-            <i class="fas fa-magnifying-glass"></i>
-            <input id="global-search" type="search" placeholder="Search this view" data-global-search autocomplete="off">
+          <!-- Global search -->
+          <label class="global-search" for="global-search" aria-label="Search">
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="global-search" type="search" placeholder="Search… ( / )" data-global-search autocomplete="off" spellcheck="false">
           </label>
 
+          <!-- Notifications -->
           <div class="menu-wrap">
-            <button class="icon-button tooltip" type="button" data-menu-toggle="notifications-menu" aria-label="Open notifications" data-tooltip="Notifications">
+            <button class="icon-button tooltip" type="button" data-menu-toggle="notifications-menu"
+                    aria-label="Open notifications" data-tooltip="Notifications" style="position:relative;">
               <i class="fas fa-bell"></i>
               <span class="notification-dot" aria-hidden="true"></span>
             </button>
-            <div class="menu-panel notifications-menu" id="notifications-menu" hidden>
+            <div class="menu-panel" id="notifications-menu" hidden role="menu" aria-label="Notifications">
               <div class="menu-title">Notifications</div>
               <div class="notification-item">
                 <span class="notification-icon success"><i class="fas fa-circle-check"></i></span>
                 <div>
                   <strong>Protection active</strong>
-                  <small>All frontend monitors are connected.</small>
+                  <small>All frontend monitors connected.</small>
                 </div>
               </div>
               <div class="notification-item">
                 <span class="notification-icon info"><i class="fas fa-rotate"></i></span>
                 <div>
                   <strong>Auto refresh enabled</strong>
-                  <small>Live data updates without leaving the page.</small>
+                  <small>Live data updates every 15s.</small>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Theme toggle -->
           <button class="icon-button tooltip" type="button" data-theme-toggle aria-label="Toggle theme" data-tooltip="Theme"></button>
 
+          <!-- User profile -->
           <div class="menu-wrap">
             <button class="profile-button" type="button" data-menu-toggle="profile-menu" aria-label="Open user menu">
               <span class="avatar">{{ (display_user or 'G')[:1]|upper }}</span>
               <span class="profile-copy">
                 <strong>{{ display_user }}</strong>
-                <small>{{ "Admin" if is_authenticated else "Viewer" }}</small>
+                <small>{{ 'Admin' if is_authenticated else 'Viewer' }}</small>
               </span>
               <i class="fas fa-chevron-down"></i>
             </button>
-            <div class="menu-panel profile-menu" id="profile-menu" hidden>
+            <div class="menu-panel" id="profile-menu" hidden role="menu" aria-label="Account menu">
               <div class="menu-title">Account</div>
-              <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a>
-              <a href="{{ url_for('dashboard') }}"><i class="fas fa-satellite-dish"></i> Attack Stream</a>
+              <a href="{{ url_for('admin_dashboard') }}" role="menuitem"><i class="fas fa-chart-line"></i> Dashboard</a>
+              <a href="{{ url_for('dashboard') }}" role="menuitem"><i class="fas fa-satellite-dish"></i> Attack Stream</a>
+              <a href="{{ url_for('ml_analysis') }}" role="menuitem"><i class="fas fa-brain"></i> ML Analysis</a>
               {% if is_authenticated %}
-              <a class="danger" href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</a>
+              <a class="danger" href="{{ url_for('logout') }}" role="menuitem"><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</a>
               {% else %}
-              <a href="{{ url_for('login') }}"><i class="fas fa-lock"></i> Admin Login</a>
+              <a href="{{ url_for('login') }}" role="menuitem"><i class="fas fa-lock"></i> Admin Login</a>
               {% endif %}
             </div>
           </div>
         </div>
       </header>
 
+      <!-- Page content -->
       <main id="main-content" class="main-content" tabindex="-1">
         {% block content %}{% endblock %}
       </main>
     </div>
   </div>
 
-  <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <!-- Toast region -->
+  <div class="toast-region" aria-live="polite" aria-atomic="true" role="status"></div>
 
+  <!-- Scripts -->
   <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>

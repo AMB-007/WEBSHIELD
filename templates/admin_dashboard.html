@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+<!-- Metric cards -->
 <section class="metric-grid" aria-label="Authentication analytics">
   <article class="metric-card" style="--metric-color: var(--blue);" data-searchable="total attempts login activity">
     <div class="metric-head">
@@ -20,11 +21,11 @@
     </div>
     <div class="metric-footer">
       <span>All recorded login attempts</span>
-      <span class="trend"><i class="fas fa-wave-square"></i> Live</span>
+      <span class="trend"><span class="live-dot"></span> Live</span>
     </div>
   </article>
 
-  <article class="metric-card" style="--metric-color: var(--red);" data-searchable="failed attempts blocked incorrect credentials">
+  <article class="metric-card" style="--metric-color: var(--red);" data-searchable="failed attempts blocked credentials">
     <div class="metric-head">
       <div>
         <div class="metric-kicker">Failed Attempts</div>
@@ -34,7 +35,7 @@
     </div>
     <div class="metric-footer">
       <span>Blocked or invalid credentials</span>
-      <span class="badge danger">{{ ((failed_attempts / total_attempts * 100) if total_attempts else 0)|round(0)|int }}%</span>
+      <span class="badge danger">{{ ((failed_attempts / total_attempts * 100) if total_attempts else 0)|round(0)|int }}% rate</span>
     </div>
   </article>
 
@@ -67,7 +68,10 @@
   </article>
 </section>
 
-<section class="layout-grid">
+<!-- Main grid -->
+<section class="layout-grid" aria-label="Login activity and charts">
+
+  <!-- Recent login table -->
   <article class="table-panel" data-searchable="recent login activity authentication table">
     <div class="panel-head">
       <div class="panel-title">
@@ -77,9 +81,8 @@
           <p>Latest authentication events with origin, status, and client details.</p>
         </div>
       </div>
-      <button class="button sm" type="button" onclick="location.reload()">
-        <i class="fas fa-rotate"></i>
-        Refresh
+      <button class="button sm" type="button" onclick="location.reload()" aria-label="Refresh page">
+        <i class="fas fa-rotate"></i> Refresh
       </button>
     </div>
 
@@ -113,7 +116,7 @@
             </td>
             <td><span class="mono">{{ attempt.ip_address }}</span></td>
             <td class="nowrap">{{ attempt.timestamp|display_time }}</td>
-            <td class="truncate" style="max-width: 260px;">{{ attempt.user_agent or 'Unknown client' }}</td>
+            <td class="truncate" style="max-width: 240px; color: var(--text-muted);">{{ attempt.user_agent or 'Unknown client' }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -128,34 +131,42 @@
     {% endif %}
   </article>
 
+  <!-- Side panels: chart + alerts -->
   <div class="stack-lg">
-    <article class="panel" data-searchable="attack statistics chart success failed">
+    <!-- Doughnut chart -->
+    <article class="panel" data-searchable="attempt chart success failed authentication">
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-icon" style="--metric-color: var(--indigo);"><i class="fas fa-chart-pie"></i></span>
           <div>
             <h2>Attempt Mix</h2>
-            <p>Successful versus failed authentication outcomes.</p>
+            <p>Successful vs. failed outcomes.</p>
           </div>
         </div>
       </div>
       <div class="panel-body">
         <div class="chart-box">
-          <canvas id="attemptChart" data-failed="{{ failed_attempts|default(0) }}" data-success="{{ success_attempts|default(0) }}" aria-label="Authentication attempt chart"></canvas>
+          <canvas id="attemptChart"
+            data-failed="{{ failed_attempts|default(0) }}"
+            data-success="{{ success_attempts|default(0) }}"
+            aria-label="Authentication attempt doughnut chart"></canvas>
         </div>
       </div>
     </article>
 
-    <article class="panel" data-searchable="security alerts suspicious activity">
+    <!-- Security alerts -->
+    <article class="panel" data-searchable="security alerts suspicious activity warnings">
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-icon" style="--metric-color: var(--amber);"><i class="fas fa-triangle-exclamation"></i></span>
           <div>
             <h2>Security Alerts</h2>
-            <p>Prioritized signals from authentication and attack logs.</p>
+            <p>Prioritized signals from auth and attack logs.</p>
           </div>
         </div>
-        <span class="badge {{ 'danger' if security_alerts else 'success' }}">{{ security_alerts|length if security_alerts else 0 }}</span>
+        <span class="badge {{ 'danger' if security_alerts else 'success' }}" aria-label="{{ security_alerts|length if security_alerts else 0 }} alerts">
+          {{ security_alerts|length if security_alerts else 0 }}
+        </span>
       </div>
       <div class="panel-body">
         {% if security_alerts %}
@@ -182,14 +193,16 @@
   </div>
 </section>
 
-<section class="layout-grid equal">
+<!-- Quick actions + interface state demo -->
+<section class="layout-grid equal" aria-label="Quick actions and system states">
+  <!-- Quick actions -->
   <article class="panel" data-searchable="quick actions attack stream machine learning clear logs">
     <div class="panel-head">
       <div class="panel-title">
         <span class="panel-icon" style="--metric-color: var(--cyan);"><i class="fas fa-bolt"></i></span>
         <div>
           <h2>Quick Actions</h2>
-          <p>Move between the highest-value operational screens.</p>
+          <p>Jump to the highest-value operational screens.</p>
         </div>
       </div>
     </div>
@@ -198,7 +211,7 @@
         <a class="quick-item" href="{{ url_for('dashboard') }}">
           <span class="quick-icon" style="--metric-color: var(--blue);"><i class="fas fa-satellite-dish"></i></span>
           <span>
-            <strong>Open Attack Stream</strong>
+            <strong>Attack Stream</strong>
             <span class="muted-line">Inspect live attack logs and payload details.</span>
           </span>
           <i class="fas fa-arrow-right"></i>
@@ -206,7 +219,7 @@
         <a class="quick-item" href="{{ url_for('ml_analysis') }}">
           <span class="quick-icon" style="--metric-color: var(--indigo);"><i class="fas fa-brain"></i></span>
           <span>
-            <strong>Run ML Analysis</strong>
+            <strong>ML Analysis</strong>
             <span class="muted-line">Refresh model detections and confidence scores.</span>
           </span>
           <i class="fas fa-arrow-right"></i>
@@ -214,7 +227,7 @@
         <a class="quick-item" href="{{ url_for('clear_logs_page') }}">
           <span class="quick-icon" style="--metric-color: var(--red);"><i class="fas fa-database"></i></span>
           <span>
-            <strong>Manage Logs</strong>
+            <strong>Log Management</strong>
             <span class="muted-line">Clear selected datasets using confirmation dialogs.</span>
           </span>
           <i class="fas fa-arrow-right"></i>
@@ -223,23 +236,28 @@
     </div>
   </article>
 
-  <article class="panel" data-searchable="system state loading success error empty">
+  <!-- System state showcase -->
+  <article class="panel" data-searchable="system states loading success error interface">
     <div class="panel-head">
       <div class="panel-title">
         <span class="panel-icon" style="--metric-color: var(--green);"><i class="fas fa-layer-group"></i></span>
         <div>
-          <h2>Interface States</h2>
-          <p>Reusable loading, success, warning, and empty states are built into the UI system.</p>
+          <h2>System Status</h2>
+          <p>Live interface states and monitoring indicators.</p>
         </div>
       </div>
     </div>
     <div class="panel-body">
       <div class="state-grid">
-        <div class="skeleton line" aria-hidden="true"></div>
-        <div class="skeleton line" style="width: 78%;" aria-hidden="true"></div>
+        <div class="skeleton line" aria-hidden="true" style="width: 90%;"></div>
+        <div class="skeleton line" aria-hidden="true" style="width: 70%;"></div>
         <div class="alert success">
           <i class="fas fa-circle-check"></i>
-          <div><strong>Ready</strong><div>Dashboard components are responsive and theme-aware.</div></div>
+          <div><strong>Dashboard ready</strong><div>All components are responsive and theme-aware.</div></div>
+        </div>
+        <div class="alert info">
+          <i class="fas fa-rotate"></i>
+          <div><strong>Auto refresh active</strong><div>Activity table polls every 30 seconds.</div></div>
         </div>
       </div>
     </div>
@@ -250,75 +268,86 @@
 {% block scripts %}
 <script>
   (function () {
-    const canvas = document.getElementById("attemptChart");
+    const canvas = document.getElementById('attemptChart');
     if (!canvas || !window.Chart) return;
 
     function isDark() {
-      return document.documentElement.getAttribute("data-theme") === "dark";
+      return document.documentElement.getAttribute('data-theme') === 'dark';
     }
 
-    const failed = Number(canvas.dataset.failed || 0);
+    const failed  = Number(canvas.dataset.failed  || 0);
     const success = Number(canvas.dataset.success || 0);
+    const hasData = failed + success > 0;
+
     const chart = new Chart(canvas, {
-      type: "doughnut",
+      type: 'doughnut',
       data: {
-        labels: ["Failed", "Successful"],
+        labels: ['Failed', 'Successful'],
         datasets: [{
-          data: [failed, success],
-          backgroundColor: ["#ef4444", "#22c55e"],
-          borderColor: isDark() ? "#0f172a" : "#ffffff",
-          borderWidth: 4,
-          hoverOffset: 6
+          data: hasData ? [failed, success] : [1, 0],
+          backgroundColor: hasData ? ['#EF4444', '#22C55E'] : ['#E2E8F0', '#E2E8F0'],
+          borderColor: isDark() ? '#0A0F1E' : '#FFFFFF',
+          borderWidth: 3,
+          hoverOffset: 8
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: "68%",
+        cutout: '72%',
+        animation: { animateRotate: true, animateScale: true, duration: 600 },
         plugins: {
           legend: {
-            position: "bottom",
+            position: 'bottom',
             labels: {
               usePointStyle: true,
-              pointStyle: "circle",
-              color: isDark() ? "#cbd5e1" : "#475569",
-              padding: 18
+              pointStyle: 'circle',
+              color: isDark() ? '#94A3B8' : '#64748B',
+              padding: 20,
+              font: { family: 'Inter', size: 12, weight: '500' }
             }
+          },
+          tooltip: {
+            backgroundColor: isDark() ? '#1E293B' : '#0F172A',
+            padding: 12,
+            cornerRadius: 8,
+            titleFont: { family: 'Inter', size: 12 },
+            bodyFont: { family: 'Inter', size: 12 }
           }
         }
       }
     });
 
-    window.addEventListener("themechange", function () {
-      chart.data.datasets[0].borderColor = isDark() ? "#0f172a" : "#ffffff";
-      chart.options.plugins.legend.labels.color = isDark() ? "#cbd5e1" : "#475569";
+    window.addEventListener('themechange', function () {
+      chart.data.datasets[0].borderColor = isDark() ? '#0A0F1E' : '#FFFFFF';
+      chart.options.plugins.legend.labels.color = isDark() ? '#94A3B8' : '#64748B';
       chart.update();
     });
 
+    /* Live activity polling */
     function addActivity(activity) {
-      const tbody = document.getElementById("recent-activity");
+      const tbody = document.getElementById('recent-activity');
       if (!tbody || !activity) return;
-      const row = document.createElement("tr");
-      row.dataset.searchable = [activity.username, activity.ip_address, activity.user_agent].join(" ");
+      const row = document.createElement('tr');
+      row.dataset.searchable = [activity.username, activity.ip_address, activity.user_agent].join(' ');
+      row.style.animation = 'toast-in 0.3s both';
       row.innerHTML = `
         <td><div class="cell-title"><strong>${WebShield.escapeHTML(activity.username)}</strong><small>New activity</small></div></td>
-        <td><span class="badge ${activity.success ? "success" : "danger"}"><i class="fas ${activity.success ? "fa-circle-check" : "fa-circle-xmark"}"></i> ${activity.success ? "Success" : "Failed"}</span></td>
+        <td><span class="badge ${activity.success ? 'success' : 'danger'}"><i class="fas ${activity.success ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> ${activity.success ? 'Success' : 'Failed'}</span></td>
         <td><span class="mono">${WebShield.escapeHTML(activity.ip_address)}</span></td>
         <td class="nowrap">Just now</td>
-        <td class="truncate" style="max-width: 260px;">${WebShield.escapeHTML(activity.user_agent || "Unknown client")}</td>`;
+        <td class="truncate" style="max-width:240px;color:var(--text-muted);">${WebShield.escapeHTML(activity.user_agent || 'Unknown client')}</td>`;
       tbody.prepend(row);
       while (tbody.children.length > 10) tbody.lastElementChild.remove();
-      WebShield.toast("New login event", `${activity.username || "User"} from ${activity.ip_address || "unknown IP"}`, activity.success ? "success" : "warning");
+      WebShield.toast('New login event', `${activity.username || 'User'} from ${activity.ip_address || 'unknown IP'}`, activity.success ? 'success' : 'warning');
     }
 
     setInterval(function () {
       if (document.hidden) return;
-      fetch("{{ url_for('get_recent_activity') }}")
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.new_activity && data.activity) addActivity(data.activity);
-        })
-        .catch(function () {});
+      fetch('{{ url_for("get_recent_activity") }}')
+        .then(r => r.json())
+        .then(data => { if (data.new_activity && data.activity) addActivity(data.activity); })
+        .catch(() => {});
     }, 30000);
   })();
 </script>
