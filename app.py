@@ -213,7 +213,28 @@ def index():
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    logs = AttackLog.query.order_by(AttackLog.timestamp.desc()).limit(50).all()
+    total_logs = AttackLog.query.count()
+    critical_logs = AttackLog.query.filter(
+        db.func.lower(AttackLog.severity) == 'critical'
+    ).count()
+    unique_ips = db.session.query(AttackLog.source_ip).filter(
+        AttackLog.source_ip.isnot(None)
+    ).distinct().count()
+    attack_types = db.session.query(AttackLog.attack_type).filter(
+        AttackLog.attack_type.isnot(None)
+    ).distinct().count()
+
+    return render_template(
+        'dashboard.html',
+        logs=logs,
+        logs_json=[log.to_dict() for log in logs],
+        total_logs=total_logs,
+        critical_logs=critical_logs,
+        unique_ips=unique_ips,
+        attack_types=attack_types,
+        session_username=session.get('username')
+    )
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -744,6 +765,13 @@ def ml_stats():
     try:
         # Get total attack detections (prediction = 1)
         attack_detections = MLDetection.query.filter_by(prediction=1).count()
+        brute_force = MLDetection.query.filter_by(prediction=1, attack_type='brute_force').count()
+        sql_injection = MLDetection.query.filter_by(prediction=1, attack_type='sql_injection').count()
+
+        critical = 0
+        for detection in MLDetection.query.filter_by(prediction=1).all():
+            if get_detection_severity(detection) == 'critical':
+                critical += 1
         
         # Get recent detections (last 24 hours)
         from datetime import timedelta
@@ -757,6 +785,10 @@ def ml_stats():
             'success': True,
             'attack_detections': attack_detections,
             'recent_detections': recent_detections,
+            'brute_force': brute_force,
+            'sql_injection': sql_injection,
+            'total': attack_detections,
+            'critical': critical,
             'model_status': ml_detector.get_model_status()
         })
         

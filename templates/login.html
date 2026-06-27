@@ -3,109 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login — WebShield</title>
-  <meta name="description" content="Restricted access portal for WebShield cybersecurity monitoring.">
+  <meta name="description" content="Restricted administrator access for WebShield security operations.">
+  <title>Admin Login - WebShield</title>
   <script>
-    (function(){try{const s=localStorage.getItem("ws-theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.setAttribute("data-theme",s==="dark"||s==="light"?s:(d?"dark":"light"));}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+    (function () {
+      try {
+        var saved = localStorage.getItem("ws-theme");
+        var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", saved === "dark" || saved === "light" ? saved : (dark ? "dark" : "light"));
+      } catch (error) {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
 </head>
 <body>
-<div class="auth-shell">
-  <!-- Left panel -->
-  <aside class="auth-panel-left">
-    <div class="auth-brand">
-      <div class="auth-brand-icon"><i class="fas fa-shield-halved"></i></div>
-      <div>
-        <div class="auth-brand-name">WebShield</div>
-        <div class="auth-brand-sub">Security Operations</div>
-      </div>
-    </div>
+  <div class="auth-shell">
+    <aside class="auth-aside" aria-label="Product overview">
+      <a class="brand" href="{{ url_for('dashboard') }}" aria-label="WebShield attack stream">
+        <span class="brand-mark"><i class="fas fa-shield-halved"></i></span>
+        <span class="brand-copy">
+          <strong>WebShield</strong>
+          <small>Security Operations</small>
+        </span>
+      </a>
 
-    <div class="auth-hero">
-      <div class="auth-hero-pill"><i class="fas fa-circle-dot"></i> Active Protection</div>
-      <h1 class="auth-hero-title">Cybersecurity Monitoring Portal</h1>
-      <p class="auth-hero-desc">Restricted access for administrators monitoring brute-force attempts, SQL injection activity, and ML-powered threat signals in real time.</p>
-      <ul class="auth-feature-list">
-        <li><span class="feat-icon"><i class="fas fa-bolt"></i></span>Real-time threat visibility &amp; alerting</li>
-        <li><span class="feat-icon"><i class="fas fa-brain"></i></span>ML-based behavioural anomaly detection</li>
-        <li><span class="feat-icon"><i class="fas fa-lock"></i></span>Centralized authentication log management</li>
-        <li><span class="feat-icon"><i class="fas fa-chart-pie"></i></span>Attack statistics &amp; severity analysis</li>
-      </ul>
-    </div>
-
-    <div class="auth-panel-left-footer">
-      For authorized security personnel only. All access is logged.
-    </div>
-  </aside>
-
-  <!-- Right panel — form -->
-  <main class="auth-panel-right">
-    <div class="auth-panel-right-top">
-      <button class="btn btn-ghost btn-sm btn-theme" data-theme-toggle type="button">
-        <i class="fas fa-moon"></i> Dark Mode
-      </button>
-    </div>
-
-    <div class="auth-form-container animate-in">
-      <p class="auth-form-subtitle" style="font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--brand);margin-bottom:8px;">
-        <i class="fas fa-lock"></i> Secure Access
-      </p>
-      <h1 class="auth-form-title">Admin Login</h1>
-      <p class="auth-form-subtitle">Sign in to access the security dashboard.</p>
-
-      {% if error %}
-      <div class="alert alert-danger mb-16" role="alert">
-        <i class="fas fa-triangle-exclamation"></i>
-        <span>{{ error }}</span>
-      </div>
-      {% endif %}
-
-      <form method="POST" action="/login" novalidate>
-        <div class="form-group mb-16">
-          <label class="form-label" for="username"><i class="fas fa-user" style="margin-right:5px;opacity:0.6;"></i>Username</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-user"></i></span>
-            <input type="text" class="form-control" id="username" name="username"
-                   placeholder="Enter username" required autocomplete="username">
+      <section class="auth-hero">
+        <span class="badge success"><i class="fas fa-circle"></i> Live protection</span>
+        <h1 class="auth-title">Operate threat visibility from one calm command center.</h1>
+        <p class="auth-copy">Review login behavior, attack payloads, ML detections, and incident cleanup tools in a focused admin console built for fast security decisions.</p>
+        <div class="auth-proof" aria-label="Platform highlights">
+          <div>
+            <strong>15s</strong>
+            <small>live refresh</small>
+          </div>
+          <div>
+            <strong>4</strong>
+            <small>attack classes</small>
+          </div>
+          <div>
+            <strong>ML</strong>
+            <small>risk scoring</small>
           </div>
         </div>
+      </section>
 
-        <div class="form-group mb-20">
-          <label class="form-label" for="password"><i class="fas fa-key" style="margin-right:5px;opacity:0.6;"></i>Password</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-key"></i></span>
-            <input type="password" class="form-control" id="password" name="password"
-                   placeholder="Enter password" required autocomplete="current-password">
+      <p class="auth-copy">Authorized personnel only. Every login attempt is recorded for investigation and audit workflows.</p>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-toolbar">
+        <button class="icon-button tooltip" type="button" data-theme-toggle data-tooltip="Theme" aria-label="Toggle theme"></button>
+      </div>
+
+      <section class="auth-card" aria-labelledby="login-title">
+        <header>
+          <span class="eyebrow">Secure Access</span>
+          <h1 id="login-title">Sign in to WebShield</h1>
+          <p>Use the administrator credentials to continue to the security dashboard.</p>
+        </header>
+
+        {% if error %}
+        <div class="alert danger" role="alert">
+          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+          <div>
+            <strong>Access denied</strong>
+            <div>{{ error }}</div>
           </div>
         </div>
+        {% endif %}
 
-        <div class="form-check mb-20">
-          <input type="checkbox" class="form-check-input" id="remember" name="remember">
-          <label class="form-check-label" for="remember">Keep me signed in</label>
+        <form class="form-grid" method="POST" action="{{ url_for('login') }}" id="login-form">
+          <label class="form-field" for="username">
+            <span class="form-label">Username</span>
+            <span class="input-wrap">
+              <i class="fas fa-user" aria-hidden="true"></i>
+              <input class="input" id="username" name="username" type="text" placeholder="admin" autocomplete="username" required autofocus>
+            </span>
+          </label>
+
+          <label class="form-field" for="password">
+            <span class="form-label">Password</span>
+            <span class="input-wrap">
+              <i class="fas fa-key" aria-hidden="true"></i>
+              <input class="input" id="password" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required>
+            </span>
+          </label>
+
+          <label class="check-row">
+            <input type="checkbox" name="remember" id="remember">
+            <span>Keep this session active on this device</span>
+          </label>
+
+          <button class="button primary lg block" type="submit" id="login-button">
+            <i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i>
+            Sign In
+          </button>
+        </form>
+
+        <div class="alert info" style="margin-top: 18px;">
+          <i class="fas fa-circle-info" aria-hidden="true"></i>
+          <div>
+            <strong>Demo credentials</strong>
+            <div>Username <code>admin</code>, password <code>admin123</code>.</div>
+          </div>
         </div>
+      </section>
+    </main>
+  </div>
 
-        <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
-          <i class="fas fa-arrow-right-to-bracket"></i> Sign In to Dashboard
-        </button>
-      </form>
-
-      <div class="auth-form-notice">
-        <i class="fas fa-circle-info"></i>
-        <span>All login attempts are logged and analysed for security research and incident response.</span>
-      </div>
-    </div>
-  </main>
-</div>
-
-<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
-<script>
-  document.querySelector("form").addEventListener("submit", function(e) {
-    const btn = document.getElementById("login-btn");
-    btn.innerHTML = '<span class="spinner"></span> Signing in…';
-    btn.disabled = true;
-  });
-</script>
+  <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", function () {
+      var button = document.getElementById("login-button");
+      button.disabled = true;
+      button.innerHTML = '<span class="spinner" aria-hidden="true"></span> Signing in';
+    });
+  </script>
 </body>
 </html>

@@ -1,191 +1,286 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clear Logs — WebShield</title>
-  <script>
-    (function(){try{const s=localStorage.getItem("ws-theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.setAttribute("data-theme",s==="dark"||s==="light"?s:(d?"dark":"light"));}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-</head>
-<body>
-<div class="mobile-topbar">
-  <button class="hamburger-btn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
-  <div class="auth-brand-icon" style="width:32px;height:32px;font-size:0.8rem;"><i class="fas fa-shield-halved"></i></div>
-  <span class="brand-title">WebShield</span>
-</div>
-<div class="sidebar-overlay"></div>
+{% set active_page = 'clear' %}
+{% set page_title = 'Log Management' %}
+{% set page_eyebrow = 'Data Operations' %}
+{% set page_subtitle = 'Clear selected telemetry datasets with explicit confirmation and immediate visual feedback.' %}
+{% extends 'base.html' %}
 
-<div class="app-shell">
-  <aside class="app-sidebar">
-    <div class="brand-block">
-      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
-      <div>
-        <div class="brand-title">WebShield</div>
-        <div class="brand-subtitle">Admin Console</div>
-      </div>
-    </div>
-    <div class="user-panel">
-      <div class="user-panel-name"><i class="fas fa-user-shield" style="margin-right:6px;opacity:0.7;"></i>{{ session_username }}</div>
-      <div class="user-panel-role">Security Administrator</div>
-    </div>
-    <div class="sidebar-divider"></div>
-    <ul class="sidebar-nav">
-      <li><a class="nav-link" href="/admin"><span class="nav-icon"><i class="fas fa-gauge-high"></i></span> Dashboard</a></li>
-      <li><a class="nav-link" href="/ml-analysis"><span class="nav-icon"><i class="fas fa-brain"></i></span> ML Analysis</a></li>
-      <li><a class="nav-link active" href="/clear-logs"><span class="nav-icon"><i class="fas fa-trash-can"></i></span> Clear Logs</a></li>
-      <li><a class="nav-link" href="/dashboard"><span class="nav-icon"><i class="fas fa-satellite-dish"></i></span> Attack Stream</a></li>
-    </ul>
-    <div class="sidebar-footer">
-      <a class="nav-link danger" href="/logout"><span class="nav-icon"><i class="fas fa-arrow-right-from-bracket"></i></span> Logout</a>
-    </div>
-  </aside>
-
-  <main class="app-main">
-    <!-- Topbar -->
-    <header class="app-topbar animate-in">
-      <div class="topbar-left">
-        <span class="page-eyebrow"><i class="fas fa-trash-can"></i> Log Management</span>
-        <h1 class="page-title">Clear Logs</h1>
-        <p class="page-subtitle">Purge attack log categories. All deletions are permanent and cannot be undone.</p>
-      </div>
-      <div class="topbar-right">
-        <button class="btn btn-ghost btn-sm btn-theme" data-theme-toggle type="button"></button>
-      </div>
-    </header>
-
-    <!-- Warning -->
-    <div class="alert alert-warning animate-in">
-      <i class="fas fa-triangle-exclamation"></i>
-      <div>
-        <strong>Destructive operation.</strong> Clearing logs permanently removes all records in the selected category from the database. This action cannot be reversed.
-      </div>
-    </div>
-
-    <!-- Flash messages -->
-    {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}
-    {% for cat, msg in msgs %}
-    <div class="alert alert-{{ 'success' if cat == 'success' else 'danger' }} animate-in">
-      <i class="fas {{ 'fa-check-circle' if cat == 'success' else 'fa-triangle-exclamation' }}"></i>
-      <span>{{ msg }}</span>
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
-
-    <!-- Log type cards -->
-    <section class="clear-grid animate-in">
-      <!-- Brute Force -->
-      <div class="clear-card">
-        <div class="clear-card-icon orange"><i class="fas fa-user-slash"></i></div>
-        <div class="clear-card-title">Brute Force Logs</div>
-        <div class="clear-card-desc">All recorded brute-force login attempt entries and associated ML detections.</div>
-        <form method="POST" action="/clear-logs" style="width:100%;margin-top:auto;">
-          <input type="hidden" name="log_type" value="brute-force">
-          <button type="submit" class="btn btn-warning btn-block" onclick="return confirm('Delete all Brute Force logs? This cannot be undone.')">
-            <i class="fas fa-trash-can"></i> Clear Brute Force
-          </button>
-        </form>
-      </div>
-
-      <!-- Burp Suite -->
-      <div class="clear-card">
-        <div class="clear-card-icon cyan"><i class="fas fa-bug"></i></div>
-        <div class="clear-card-title">Burp Suite Logs</div>
-        <div class="clear-card-desc">Attack logs captured from Burp Suite proxy, including Nmap and SQL injection events.</div>
-        <form method="POST" action="/clear-logs" style="width:100%;margin-top:auto;">
-          <input type="hidden" name="log_type" value="burp-suite">
-          <button type="submit" class="btn btn-ghost btn-block" onclick="return confirm('Delete all Burp Suite logs? This cannot be undone.')" style="border-color:var(--cyan);color:var(--cyan);">
-            <i class="fas fa-trash-can"></i> Clear Burp Suite
-          </button>
-        </form>
-      </div>
-
-      <!-- All logs -->
-      <div class="clear-card" style="border-color:rgba(220,38,38,0.25);">
-        <div class="clear-card-icon red"><i class="fas fa-skull"></i></div>
-        <div class="clear-card-title">All Logs</div>
-        <div class="clear-card-desc">Nuke the entire attack log database including all categories, all ML records, and all login attempts.</div>
-        <form method="POST" action="/clear-logs" style="width:100%;margin-top:auto;">
-          <input type="hidden" name="log_type" value="all">
-          <button type="submit" class="btn btn-danger btn-block"
-                  onclick="return confirmClearAll()">
-            <i class="fas fa-skull"></i> Clear All Logs
-          </button>
-        </form>
-      </div>
-    </section>
-
-    <!-- Info card -->
-    <div class="card animate-in">
-      <div class="card-header">
-        <div class="card-title">
-          <div class="card-title-icon" style="background:var(--brand-soft);color:var(--brand);"><i class="fas fa-circle-info"></i></div>
-          What Gets Deleted
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="two-col" style="gap:16px;">
-          <div>
-            <p style="font-size:0.8125rem;font-weight:700;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Brute Force</p>
-            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;">
-              <li class="d-flex align-center gap-8"><span class="badge badge-danger"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=brute_force</code>)</span></li>
-              <li class="d-flex align-center gap-8"><span class="badge badge-danger"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">LoginAttempt records</span></li>
-              <li class="d-flex align-center gap-8"><span class="badge badge-danger"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">MLDetection records linked to brute force</span></li>
-            </ul>
-          </div>
-          <div>
-            <p style="font-size:0.8125rem;font-weight:700;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Burp Suite</p>
-            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;">
-              <li class="d-flex align-center gap-8"><span class="badge badge-warning"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=burp</code>)</span></li>
-              <li class="d-flex align-center gap-8"><span class="badge badge-warning"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=sql_injection</code>)</span></li>
-              <li class="d-flex align-center gap-8"><span class="badge badge-warning"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=nmap</code>)</span></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- Confirmation modal (clear all) -->
-<div class="modal-backdrop" id="clearAllModal" style="display:none;" onclick="closeClearModal(event)">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span style="font-size:1.2rem;"><i class="fas fa-skull" style="color:var(--red);margin-right:8px;"></i></span>
-      <h2 style="font-size:1rem;font-weight:700;margin:0;">Confirm: Delete All Logs</h2>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:0.9rem;color:var(--text-2);margin:0;">
-        This will permanently delete <strong style="color:var(--text);">all</strong> attack logs, login attempts, and ML detection records from the database.
-        This action <strong style="color:var(--red);">cannot be undone</strong>.
-      </p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('clearAllModal').style.display='none'">Cancel</button>
-      <button class="btn btn-danger" onclick="document.getElementById('clearAllForm').submit()">
-        <i class="fas fa-skull"></i> Yes, Delete Everything
-      </button>
-    </div>
+{% block content %}
+<section class="alert warning" data-searchable="destructive operation clear logs warning">
+  <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+  <div>
+    <strong>Destructive operations require confirmation.</strong>
+    <div>Deleted logs are removed from the database and related JSON result files may also be deleted depending on the category.</div>
   </div>
-</div>
-<form id="clearAllForm" method="POST" action="/clear-logs" style="display:none;">
-  <input type="hidden" name="log_type" value="all">
-</form>
+</section>
 
-<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+<section class="metric-grid" aria-label="Log inventory summary">
+  <article class="metric-card" style="--metric-color: var(--blue);" data-searchable="total attack logs">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Attack Logs</div>
+        <div class="metric-value" id="clear-total">0</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-database"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Total records</span>
+      <span class="badge blue">Live</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--red);" data-searchable="high severity logs">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">High Severity</div>
+        <div class="metric-value" id="clear-high">0</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-triangle-exclamation"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>High and critical logs</span>
+      <span class="badge danger">Risk</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--indigo);" data-searchable="ml detections">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">ML Detections</div>
+        <div class="metric-value" id="clear-ml">0</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-brain"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Stored model findings</span>
+      <span class="badge indigo">Model</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--cyan);" data-searchable="active categories">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Categories</div>
+        <div class="metric-value" id="clear-categories">0</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-layer-group"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Attack classes with data</span>
+      <span class="badge cyan">Types</span>
+    </div>
+  </article>
+</section>
+
+<section class="clear-grid" aria-label="Clear log actions">
+  <article class="clear-card" data-searchable="clear brute force logs login attempts ml detections">
+    <div class="clear-head">
+      <span class="metric-icon" style="--metric-color: var(--amber);"><i class="fas fa-user-slash"></i></span>
+      <span class="badge warning">Authentication</span>
+    </div>
+    <div class="stack">
+      <h2 class="section-title">Brute Force Logs</h2>
+      <p>Removes brute-force attack logs, login attempt records, and linked brute-force JSON results.</p>
+    </div>
+    <button class="button warning block" type="button" data-clear-type="brute-force">
+      <i class="fas fa-trash"></i>
+      Clear Brute Force
+    </button>
+  </article>
+
+  <article class="clear-card" data-searchable="clear burp suite sql injection nmap logs">
+    <div class="clear-head">
+      <span class="metric-icon" style="--metric-color: var(--cyan);"><i class="fas fa-bug"></i></span>
+      <span class="badge cyan">Scanner</span>
+    </div>
+    <div class="stack">
+      <h2 class="section-title">Burp Suite Logs</h2>
+      <p>Removes Burp, SQL injection, and Nmap attack logs plus related scanner result files.</p>
+    </div>
+    <button class="button primary block" type="button" data-clear-type="burp-suite">
+      <i class="fas fa-trash"></i>
+      Clear Scanner Logs
+    </button>
+  </article>
+
+  <article class="clear-card" data-searchable="clear all logs database ml detections json files">
+    <div class="clear-head">
+      <span class="metric-icon" style="--metric-color: var(--red);"><i class="fas fa-fire"></i></span>
+      <span class="badge danger">Everything</span>
+    </div>
+    <div class="stack">
+      <h2 class="section-title">All Logs</h2>
+      <p>Deletes all attack logs, all login attempts, all ML detections, and every JSON result file in the project root.</p>
+    </div>
+    <button class="button danger block" type="button" data-clear-type="all">
+      <i class="fas fa-triangle-exclamation"></i>
+      Clear Everything
+    </button>
+  </article>
+</section>
+
+<section class="layout-grid equal">
+  <article class="table-panel" data-searchable="what gets deleted deletion matrix">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="panel-icon" style="--metric-color: var(--blue);"><i class="fas fa-table-list"></i></span>
+        <div>
+          <h2>Deletion Matrix</h2>
+          <p>Exactly which datasets each action targets.</p>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Database Records</th>
+            <th>Files</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-searchable="brute force attack logs login attempts brute force json">
+            <td><span class="badge warning">Brute Force</span></td>
+            <td>Brute force attack logs and all login attempts</td>
+            <td><code>brute_force_results.json</code></td>
+          </tr>
+          <tr data-searchable="burp suite sql injection nmap scanner logs json">
+            <td><span class="badge cyan">Scanner</span></td>
+            <td>Burp, SQL injection, Nmap, and related login attempts</td>
+            <td><code>burp_suite_results.json</code>, <code>sql_injection_results.json</code>, <code>nmap_results.json</code></td>
+          </tr>
+          <tr data-searchable="all logs ml detections json files">
+            <td><span class="badge danger">All</span></td>
+            <td>All attack logs, login attempts, and ML detections</td>
+            <td>All root-level <code>*.json</code> result files</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel" data-searchable="safe workflow success error loading states">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="panel-icon" style="--metric-color: var(--green);"><i class="fas fa-shield-halved"></i></span>
+        <div>
+          <h2>Workflow Guardrails</h2>
+          <p>Every deletion uses a modal, loading state, and toast response.</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="quick-list">
+        <div class="alert info">
+          <i class="fas fa-lock"></i>
+          <div><strong>Authenticated route</strong><div>This screen is only available from an authenticated admin session.</div></div>
+        </div>
+        <div class="alert success">
+          <i class="fas fa-circle-check"></i>
+          <div><strong>API-backed</strong><div>Actions call the existing DELETE endpoints and refresh totals afterward.</div></div>
+        </div>
+        <div class="alert warning">
+          <i class="fas fa-triangle-exclamation"></i>
+          <div><strong>Permanent</strong><div>Use these tools only after exporting anything you need to keep.</div></div>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<div class="dialog-backdrop" data-dialog-backdrop="clearLogsDialog"></div>
+<section class="dialog" id="clearLogsDialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="clearLogsTitle">
+  <div class="dialog-head">
+    <div>
+      <span class="eyebrow">Confirm Deletion</span>
+      <h2 class="section-title" id="clearLogsTitle">Clear Logs</h2>
+    </div>
+    <button class="icon-button" type="button" data-dialog-close="clearLogsDialog" aria-label="Close dialog">
+      <i class="fas fa-xmark"></i>
+    </button>
+  </div>
+  <div class="dialog-body">
+    <p class="text-muted" id="clearLogsMessage">This action cannot be undone.</p>
+  </div>
+  <div class="dialog-foot">
+    <button class="button" type="button" data-dialog-close="clearLogsDialog">Cancel</button>
+    <button class="button danger" type="button" id="confirmClearLogs"><i class="fas fa-trash"></i> Confirm Clear</button>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
 <script>
-  function confirmClearAll() {
-    document.getElementById("clearAllModal").style.display = "flex";
-    return false;
-  }
-  function closeClearModal(e) {
-    if (e.target === document.getElementById("clearAllModal"))
-      document.getElementById("clearAllModal").style.display = "none";
-  }
+  (function () {
+    const labels = {
+      "brute-force": {
+        title: "Clear Brute Force Logs",
+        message: "This removes brute-force attack logs, login attempts, and brute-force result files."
+      },
+      "burp-suite": {
+        title: "Clear Scanner Logs",
+        message: "This removes Burp, SQL injection, Nmap logs, and related scanner result files."
+      },
+      all: {
+        title: "Clear Everything",
+        message: "This removes all database log records, all ML detections, and all root-level JSON result files."
+      }
+    };
+    let clearType = null;
+
+    function loadInventory() {
+      fetch("{{ url_for('get_stats') }}")
+        .then((response) => response.json())
+        .then((stats) => {
+          const types = stats.attack_types || {};
+          document.getElementById("clear-total").textContent = stats.total_logs || 0;
+          document.getElementById("clear-high").textContent = stats.high_severity_alerts || 0;
+          document.getElementById("clear-categories").textContent = Object.values(types).filter((value) => Number(value) > 0).length;
+        })
+        .catch(() => {});
+
+      fetch("{{ url_for('ml_stats') }}")
+        .then((response) => response.json())
+        .then((stats) => {
+          document.getElementById("clear-ml").textContent = stats.total || stats.attack_detections || 0;
+        })
+        .catch(() => {});
+    }
+
+    document.querySelectorAll("[data-clear-type]").forEach((button) => {
+      button.addEventListener("click", () => {
+        clearType = button.dataset.clearType;
+        const copy = labels[clearType];
+        document.getElementById("clearLogsTitle").textContent = copy.title;
+        document.getElementById("clearLogsMessage").textContent = copy.message;
+        WebShield.openDialog("clearLogsDialog");
+      });
+    });
+
+    document.getElementById("confirmClearLogs").addEventListener("click", () => {
+      if (!clearType) return;
+      const button = document.getElementById("confirmClearLogs");
+      button.disabled = true;
+      button.innerHTML = '<span class="spinner"></span> Clearing';
+      fetch(`/api/clear-logs/${clearType}`, { method: "DELETE" })
+        .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
+        .then((result) => {
+          if (!result.ok) throw new Error(result.data.message || "Delete failed");
+          WebShield.closeDialog("clearLogsDialog");
+          WebShield.toast("Logs cleared", result.data.message || "Selected records were deleted.", "success");
+          clearType = null;
+          loadInventory();
+        })
+        .catch((error) => {
+          WebShield.toast("Clear failed", error.message || "Unable to clear logs.", "danger");
+        })
+        .finally(() => {
+          button.disabled = false;
+          button.innerHTML = '<i class="fas fa-trash"></i> Confirm Clear';
+        });
+    });
+
+    loadInventory();
+  })();
 </script>
-</body>
-</html>
+{% endblock %}

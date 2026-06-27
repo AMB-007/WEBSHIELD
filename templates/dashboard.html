@@ -1,282 +1,434 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Attack Stream — WebShield</title>
-  <meta name="description" content="Live stream of all cybersecurity attack logs captured by WebShield.">
-  <script>
-    (function(){try{const s=localStorage.getItem("ws-theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.setAttribute("data-theme",s==="dark"||s==="light"?s:(d?"dark":"light"));}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-</head>
-<body>
-<div class="mobile-topbar">
-  <button class="hamburger-btn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
-  <div class="auth-brand-icon" style="width:32px;height:32px;font-size:0.8rem;"><i class="fas fa-shield-halved"></i></div>
-  <span class="brand-title">Attack Stream</span>
-</div>
-<div class="sidebar-overlay"></div>
+{% set active_page = 'dashboard' %}
+{% set page_title = 'Attack Stream' %}
+{% set page_eyebrow = 'Live Feed' %}
+{% set page_subtitle = 'Inspect captured brute-force, SQL injection, Nmap, and Burp Suite events in real time.' %}
+{% extends 'base.html' %}
 
-<div class="app-shell">
-  <!-- Sidebar (minimal public sidebar) -->
-  <aside class="app-sidebar">
-    <div class="brand-block">
-      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+{% block content %}
+<section class="metric-grid" aria-label="Attack stream analytics">
+  <article class="metric-card" style="--metric-color: var(--blue);" data-searchable="total logs all captured events">
+    <div class="metric-head">
       <div>
-        <div class="brand-title">WebShield</div>
-        <div class="brand-subtitle">Attack Monitor</div>
+        <div class="metric-kicker">Total Logs</div>
+        <div class="metric-value" id="stat-total">{{ total_logs|default(0) }}</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-database"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>All captured events</span>
+      <span class="trend"><span class="live-dot"></span> Live</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--red);" data-searchable="critical high severity alerts">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Critical</div>
+        <div class="metric-value" id="stat-critical">{{ critical_logs|default(0) }}</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-triangle-exclamation"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Highest severity events</span>
+      <span class="badge danger">Priority</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--cyan);" data-searchable="unique ips distinct sources">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Unique IPs</div>
+        <div class="metric-value" id="stat-ips">{{ unique_ips|default(0) }}</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-network-wired"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Distinct attack sources</span>
+      <span class="badge cyan">Sources</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--indigo);" data-searchable="attack types categories">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Attack Types</div>
+        <div class="metric-value" id="stat-types">{{ attack_types|default(0) }}</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-tags"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Distinct categories</span>
+      <span class="badge indigo">Classified</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--amber);" data-searchable="burp suite logged attacks">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Burp Suite</div>
+        <div class="metric-value" id="stat-burp">0</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-bug"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Proxy captured findings</span>
+      <span class="badge warning">Testing</span>
+    </div>
+  </article>
+
+  <article class="metric-card" style="--metric-color: var(--green);" data-searchable="nmap scan events">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Nmap</div>
+        <div class="metric-value" id="stat-nmap">0</div>
+      </div>
+      <span class="metric-icon"><i class="fas fa-map-location-dot"></i></span>
+    </div>
+    <div class="metric-footer">
+      <span>Network scan events</span>
+      <span class="badge success">Recon</span>
+    </div>
+  </article>
+</section>
+
+<section class="layout-grid">
+  <article class="table-panel" data-searchable="attack logs table filters pagination">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="panel-icon" style="--metric-color: var(--blue);"><i class="fas fa-list-check"></i></span>
+        <div>
+          <h2>Event Log</h2>
+          <p>Filter, inspect, and open payload details without leaving the stream.</p>
+        </div>
+      </div>
+      <button class="button sm" type="button" id="refreshLogs">
+        <i class="fas fa-rotate"></i>
+        Refresh
+      </button>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-group" id="filterTabs" data-tabs aria-label="Attack type filters">
+        <button class="chip active" type="button" data-filter="all">All</button>
+        <button class="chip" type="button" data-filter="brute_force"><i class="fas fa-user-slash"></i> Brute Force</button>
+        <button class="chip" type="button" data-filter="sql_injection"><i class="fas fa-database"></i> SQL Injection</button>
+        <button class="chip" type="button" data-filter="burp"><i class="fas fa-bug"></i> Burp</button>
+        <button class="chip" type="button" data-filter="nmap"><i class="fas fa-map"></i> Nmap</button>
+      </div>
+      <div class="toolbar-group">
+        <label class="sr-only" for="limitSelect">Log limit</label>
+        <select class="select" id="limitSelect" style="width: 118px;">
+          <option value="25">25 logs</option>
+          <option value="50" selected>50 logs</option>
+          <option value="100">100 logs</option>
+        </select>
       </div>
     </div>
-    <div class="sidebar-divider"></div>
-    <ul class="sidebar-nav">
-      <li><a class="nav-link active" href="/dashboard"><span class="nav-icon"><i class="fas fa-satellite-dish"></i></span> Attack Stream</a></li>
-      {% if session_username %}
-      <li><a class="nav-link" href="/admin"><span class="nav-icon"><i class="fas fa-gauge-high"></i></span> Dashboard</a></li>
-      <li><a class="nav-link" href="/ml-analysis"><span class="nav-icon"><i class="fas fa-brain"></i></span> ML Analysis</a></li>
-      <li><a class="nav-link" href="/clear-logs"><span class="nav-icon"><i class="fas fa-trash-can"></i></span> Clear Logs</a></li>
-      {% else %}
-      <li><a class="nav-link" href="/login"><span class="nav-icon"><i class="fas fa-lock"></i></span> Admin Login</a></li>
-      {% endif %}
-    </ul>
-    {% if session_username %}
-    <div class="sidebar-footer">
-      <a class="nav-link danger" href="/logout"><span class="nav-icon"><i class="fas fa-arrow-right-from-bracket"></i></span> Logout</a>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Type</th>
+            <th>Target</th>
+            <th>Source</th>
+            <th>Time</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="logRows">
+          <tr>
+            <td colspan="6">
+              <div class="stack">
+                <div class="skeleton line"></div>
+                <div class="skeleton line" style="width: 84%;"></div>
+                <div class="skeleton line" style="width: 68%;"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    {% endif %}
-  </aside>
-
-  <main class="app-main">
-    <!-- Topbar -->
-    <header class="app-topbar animate-in">
-      <div class="topbar-left">
-        <span class="page-eyebrow"><i class="fas fa-satellite-dish"></i> Live Feed</span>
-        <h1 class="page-title">Attack Stream</h1>
-        <p class="page-subtitle">Real-time log of detected brute-force, SQL injection, Nmap and Burp Suite events.</p>
-      </div>
-      <div class="topbar-right">
-        <div class="live-pill"><span class="dot"></span> Live</div>
-        <button class="btn btn-ghost btn-sm btn-theme" data-theme-toggle type="button"></button>
-      </div>
-    </header>
-
-    <!-- Stats -->
-    <section class="stats-grid">
-      <div class="stat-card blue animate-in">
-        <div class="stat-top">
-          <div>
-            <p class="stat-label">Total Logs</p>
-            <p class="stat-value" id="stat-total">{{ total_logs|default(0) }}</p>
-          </div>
-          <div class="stat-icon"><i class="fas fa-database"></i></div>
-        </div>
-        <p class="stat-footer">All captured events</p>
-      </div>
-      <div class="stat-card red animate-in">
-        <div class="stat-top">
-          <div>
-            <p class="stat-label">Critical</p>
-            <p class="stat-value" id="stat-critical">{{ critical_logs|default(0) }}</p>
-          </div>
-          <div class="stat-icon"><i class="fas fa-skull"></i></div>
-        </div>
-        <p class="stat-footer">Highest severity events</p>
-      </div>
-      <div class="stat-card orange animate-in">
-        <div class="stat-top">
-          <div>
-            <p class="stat-label">Unique IPs</p>
-            <p class="stat-value" id="stat-ips">{{ unique_ips|default(0) }}</p>
-          </div>
-          <div class="stat-icon"><i class="fas fa-network-wired"></i></div>
-        </div>
-        <p class="stat-footer">Distinct attack sources</p>
-      </div>
-      <div class="stat-card green animate-in">
-        <div class="stat-top">
-          <div>
-            <p class="stat-label">Attack Types</p>
-            <p class="stat-value" id="stat-types">{{ attack_types|default(0) }}</p>
-          </div>
-          <div class="stat-icon"><i class="fas fa-tags"></i></div>
-        </div>
-        <p class="stat-footer">Distinct attack categories</p>
-      </div>
-      <!-- New Burp Suite stat -->
-      <div class="stat-card purple animate-in">
-        <div class="stat-top">
-          <div>
-            <p class="stat-label">Burp Suite</p>
-            <p class="stat-value" id="stat-burp">0</p>
-          </div>
-          <div class="stat-icon"><i class="fas fa-bug"></i></div>
-        </div>
-        <p class="stat-footer">Burp suite logged attacks</p>
-      </div>
-      <!-- New Nmap stat -->
-      <div class="stat-card teal animate-in">
-        <div class="stat-top">
-          <div>
-            <p class="stat-label">Nmap</p>
-            <p class="stat-value" id="stat-nmap">0</p>
-          </div>
-          <div class="stat-icon"><i class="fas fa-map"></i></div>
-        </div>
-        <p class="stat-footer">Nmap scan events</p>
-      </div>
-    </section>
-
-    <!-- Filter + log list -->
-    <div class="card animate-in">
-      <div class="filter-bar">
-        <span class="filter-label"><i class="fas fa-filter" style="margin-right:5px;"></i>Filter:</span>
-        <div class="d-flex gap-8 flex-wrap" id="filterBtns">
-          <button class="btn btn-primary btn-sm" data-filter="all" onclick="filterLogs('all', this)">All</button>
-          <button class="btn btn-ghost btn-sm" data-filter="brute_force" onclick="filterLogs('brute_force', this)">
-            <i class="fas fa-user-slash"></i> Brute Force
-          </button>
-          <button class="btn btn-ghost btn-sm" data-filter="burp" onclick="filterLogs('burp', this)">
-            <i class="fas fa-bug"></i> Burp Suite
-          </button>
-          <button class="btn btn-ghost btn-sm" data-filter="sql_injection" onclick="filterLogs('sql_injection', this)">
-            <i class="fas fa-database"></i> SQL Injection
-          </button>
-          <button class="btn btn-ghost btn-sm" data-filter="nmap" onclick="filterLogs('nmap', this)">
-            <i class="fas fa-map"></i> Nmap
-          </button>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <select class="form-select" style="width:auto;padding:6px 12px;" id="limitSelect" onchange="loadLogs()">
-            <option value="25">25</option>
-            <option value="50" selected>50</option>
-            <option value="100">100</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" onclick="loadLogs()"><i class="fas fa-arrows-rotate"></i></button>
-        </div>
-      </div>
-
-      <div class="card-body">
-        <div class="log-list" id="logContainer">
-          {% for log in logs %}
-          <div class="log-entry severity-{{ log.severity|lower }} animate-in" id="log-{{ log.id }}">
-            <div class="log-meta">
-              <span class="badge {{ 'badge-danger' if log.severity|lower == 'critical' else ('badge-warning' if log.severity|lower == 'high' else ('badge-yellow' if log.severity|lower == 'medium' else 'badge-success')) }}">
-                <i class="fas fa-circle"></i> {{ log.severity|upper }}
-              </span>
-              <span class="badge badge-neutral">{{ log.attack_type }}</span>
-              <span class="badge badge-neutral">{{ log.method or 'N/A' }}</span>
-              <span style="margin-left:auto;font-size:0.78rem;color:var(--text-3);">
-                <i class="fas fa-clock" style="margin-right:4px;"></i>{{ log.timestamp|display_time }}
-              </span>
-            </div>
-            {% if log.description %}
-            <div class="log-description">{{ log.description }}</div>
-            {% endif %}
-            <div class="log-details">
-              <span><strong>IP:</strong> {{ log.source_ip or '—' }}</span>
-              <span><strong>Host:</strong> {{ log.target_host or '—' }}</span>
-              {% if log.target_url %}<span><strong>URL:</strong> {{ log.target_url }}</span>{% endif %}
-              {% if log.status_code %}<span><strong>Status:</strong> {{ log.status_code }}</span>{% endif %}
-            </div>
-            {% if log.payload %}
-            <div style="margin-top:8px;">
-              <span class="payload-chip" title="{{ log.payload }}">{{ log.payload[:80] }}{% if log.payload|length > 80 %}…{% endif %}</span>
-            </div>
-            {% endif %}
-            {% if log.raw_data %}
-            <div style="margin-top:8px;">
-              <button class="raw-toggle-btn" onclick="toggleRaw({{ log.id }}, this)">
-                <i class="fas fa-code"></i> Raw Data
-              </button>
-              <pre class="raw-data-panel" id="raw-{{ log.id }}" style="display:none;">{{ log.raw_data }}</pre>
-            </div>
-            {% endif %}
-          </div>
-          {% else %}
-          <div class="empty-state">
-            <i class="fas fa-satellite-dish"></i>
-            <p>No attack logs found. Start the brute-force simulator or configure your tools to push to the API.</p>
-          </div>
-          {% endfor %}
-        </div>
+    <div class="pagination">
+      <span id="pageSummary">Loading logs...</span>
+      <div class="pagination-controls">
+        <button type="button" id="prevPage" aria-label="Previous page"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" id="nextPage" aria-label="Next page"><i class="fas fa-chevron-right"></i></button>
       </div>
     </div>
-  </main>
-</div>
+  </article>
 
-<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+  <div class="stack-lg">
+    <article class="panel" data-searchable="attack type distribution burp nmap sql brute">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-icon" style="--metric-color: var(--cyan);"><i class="fas fa-chart-simple"></i></span>
+          <div>
+            <h2>Distribution</h2>
+            <p>Event volume by attack category.</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="mini-bars" id="attackBars">
+          <div class="skeleton block"></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel" data-searchable="api integrations endpoint setup">
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-icon" style="--metric-color: var(--indigo);"><i class="fas fa-plug"></i></span>
+          <div>
+            <h2>Ingest Endpoints</h2>
+            <p>Use these routes to push external scanner findings.</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="quick-list">
+          <div class="quick-item">
+            <span class="badge blue">POST</span>
+            <code>/api/logs/brute_force</code>
+          </div>
+          <div class="quick-item">
+            <span class="badge blue">POST</span>
+            <code>/api/logs/sql_injection</code>
+          </div>
+          <div class="quick-item">
+            <span class="badge blue">POST</span>
+            <code>/api/logs/burp</code>
+          </div>
+          <div class="quick-item">
+            <span class="badge blue">POST</span>
+            <code>/api/logs/nmap</code>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<div class="side-panel-backdrop" data-panel-backdrop="logDetailPanel"></div>
+<aside class="side-panel" id="logDetailPanel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="logDetailTitle">
+  <div class="side-panel-head">
+    <div>
+      <span class="eyebrow">Log Detail</span>
+      <h2 class="section-title" id="logDetailTitle">Event</h2>
+    </div>
+    <button class="icon-button" type="button" data-panel-close="logDetailPanel" aria-label="Close details">
+      <i class="fas fa-xmark"></i>
+    </button>
+  </div>
+  <div class="side-panel-body" id="logDetailBody"></div>
+  <div class="side-panel-foot">
+    <button class="button" type="button" data-panel-close="logDetailPanel">Close</button>
+    <button class="button primary" type="button" id="copyLogButton"><i class="fas fa-copy"></i> Copy JSON</button>
+  </div>
+</aside>
+{% endblock %}
+
+{% block scripts %}
 <script>
-  let currentFilter = "all";
+  (function () {
+    const initialLogs = {{ logs_json|default([])|tojson }};
+    let logs = initialLogs;
+    let filter = "all";
+    let page = 1;
+    const pageSize = 10;
+    let selectedLog = null;
 
-  function toggleRaw(id, btn) {
-    const p = document.getElementById("raw-" + id);
-    const open = p.style.display === "none";
-    p.style.display = open ? "block" : "none";
-    btn.innerHTML = open ? '<i class="fas fa-chevron-up"></i> Hide' : '<i class="fas fa-code"></i> Raw Data';
-  }
+    const rows = document.getElementById("logRows");
+    const summary = document.getElementById("pageSummary");
+    const prev = document.getElementById("prevPage");
+    const next = document.getElementById("nextPage");
+    const limit = document.getElementById("limitSelect");
 
-  function filterLogs(type, btn) {
-    currentFilter = type;
-    document.querySelectorAll("#filterBtns .btn").forEach(b => {
-      b.classList.toggle("btn-primary", b === btn);
-      b.classList.toggle("btn-ghost", b !== btn);
-    });
-    loadLogs();
-  }
+    function label(value) {
+      return String(value || "unknown").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    }
 
-  function sevBadge(sev) {
-    const s = (sev||"").toLowerCase();
-    return s==="critical" ? "badge-danger" : s==="high" ? "badge-warning" : s==="medium" ? "badge-yellow" : "badge-success";
-  }
-  function sevClass(sev) {
-    return "severity-" + (sev||"low").toLowerCase();
-  }
+    function severityTone(severity) {
+      const value = String(severity || "medium").toLowerCase();
+      if (value === "critical") return "danger";
+      if (value === "high") return "warning";
+      if (value === "low") return "success";
+      return "blue";
+    }
 
-  function renderLog(log) {
-    return `
-      <div class="log-entry ${sevClass(log.severity)} animate-in" id="log-${log.id}">
-        <div class="log-meta">
-          <span class="badge ${sevBadge(log.severity)}"><i class="fas fa-circle"></i> ${(log.severity||'—').toUpperCase()}</span>
-          <span class="badge badge-neutral">${log.attack_type||'—'}</span>
-          <span class="badge badge-neutral">${log.method||'N/A'}</span>
-          <span style="margin-left:auto;font-size:0.78rem;color:var(--text-3);"><i class="fas fa-clock" style="margin-right:4px;"></i>${log.timestamp||'—'}</span>
-        </div>
-        ${log.description ? `<div class="log-description">${log.description}</div>` : ''}
-        <div class="log-details">
-          <span><strong>IP:</strong> ${log.source_ip||'—'}</span>
-          <span><strong>Host:</strong> ${log.target_host||'—'}</span>
-          ${log.target_url ? `<span><strong>URL:</strong> ${log.target_url}</span>` : ''}
-          ${log.status_code ? `<span><strong>Status:</strong> ${log.status_code}</span>` : ''}
-        </div>
-        ${log.payload ? `<div style="margin-top:8px;"><span class="payload-chip">${log.payload.substring(0,80)}${log.payload.length>80?'…':''}</span></div>` : ''}
-        ${log.raw_data ? `<div style="margin-top:8px;"><button class="raw-toggle-btn" onclick="toggleRaw(${log.id},this)"><i class="fas fa-code"></i> Raw Data</button><pre class="raw-data-panel" id="raw-${log.id}" style="display:none;">${log.raw_data}</pre></div>` : ''}
-      </div>`;
-  }
+    function time(value) {
+      if (!value) return "Unknown";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+    }
 
-  function loadLogs() {
-      const limit = document.getElementById("limitSelect").value;
-      const url = `/api/logs?limit=${limit}${currentFilter !== "all" ? "&type="+currentFilter : ""}`;
-      fetch(url).then(r => r.json()).then(d => {
-        const logs = Array.isArray(d) ? d : (d.logs || []);
-        document.getElementById("logContainer").innerHTML = logs.length
-          ? logs.map(renderLog).join("")
-          : `<div class="empty-state"><i class="fas fa-satellite-dish"></i><p>No logs for this filter.</p></div>`;
-      }).catch(() => {});
+    function getFiltered() {
+      return filter === "all" ? logs : logs.filter((log) => log.attack_type === filter);
+    }
+
+    function renderRows() {
+      const filtered = getFiltered();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page > totalPages) page = totalPages;
+      const start = (page - 1) * pageSize;
+      const pageRows = filtered.slice(start, start + pageSize);
+
+      if (!pageRows.length) {
+        rows.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <i class="fas fa-satellite-dish"></i>
+                <h3>No logs found</h3>
+                <p>There are no attack events for this filter yet. New records will appear automatically.</p>
+              </div>
+            </td>
+          </tr>`;
+      } else {
+        rows.innerHTML = pageRows.map((log) => {
+          const severity = String(log.severity || "medium").toLowerCase();
+          const searchable = [log.attack_type, log.severity, log.source_ip, log.target_url, log.target_host, log.description, log.payload].join(" ");
+          return `
+            <tr class="severity-${WebShield.escapeHTML(severity)}" data-searchable="${WebShield.escapeHTML(searchable)}">
+              <td>
+                <span class="cluster nowrap">
+                  <span class="severity-marker"></span>
+                  <span class="badge ${severityTone(severity)}">${WebShield.escapeHTML(label(severity))}</span>
+                </span>
+              </td>
+              <td>
+                <div class="cell-title">
+                  <strong>${WebShield.escapeHTML(label(log.attack_type))}</strong>
+                  <small>${WebShield.escapeHTML(log.method || "N/A")}</small>
+                </div>
+              </td>
+              <td>
+                <div class="cell-title">
+                  <strong>${WebShield.escapeHTML(log.target_host || "Unknown host")}</strong>
+                  <small>${WebShield.escapeHTML(log.target_url || "No target URL")}</small>
+                </div>
+              </td>
+              <td><span class="mono">${WebShield.escapeHTML(log.source_ip || "Unknown")}</span></td>
+              <td class="nowrap">${WebShield.escapeHTML(time(log.timestamp))}</td>
+              <td><button class="raw-toggle" type="button" data-log-id="${Number(log.id)}"><i class="fas fa-arrow-up-right-from-square"></i> Open</button></td>
+            </tr>`;
+        }).join("");
+      }
+
+      summary.textContent = filtered.length ? `Showing ${Math.min(start + 1, filtered.length)}-${Math.min(start + pageSize, filtered.length)} of ${filtered.length}` : "No logs";
+      prev.disabled = page <= 1;
+      next.disabled = page >= totalPages;
+    }
+
+    function renderBars(counts) {
+      const keys = ["brute_force", "sql_injection", "burp", "nmap"];
+      const max = Math.max(1, ...keys.map((key) => Number(counts[key] || 0)));
+      document.getElementById("attackBars").innerHTML = keys.map((key) => {
+        const value = Number(counts[key] || 0);
+        const width = Math.round((value / max) * 100);
+        return `
+          <div class="bar-row" data-searchable="${WebShield.escapeHTML(label(key))}">
+            <header><span>${WebShield.escapeHTML(label(key))}</span><strong>${value}</strong></header>
+            <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+          </div>`;
+      }).join("");
+    }
+
+    function openLog(log) {
+      selectedLog = log;
+      document.getElementById("logDetailTitle").textContent = `${label(log.attack_type)} #${log.id}`;
+      document.getElementById("logDetailBody").innerHTML = `
+        <div class="stack-lg">
+          <div class="cluster">
+            <span class="badge ${severityTone(log.severity)}">${WebShield.escapeHTML(label(log.severity))}</span>
+            <span class="badge neutral">${WebShield.escapeHTML(log.method || "N/A")}</span>
+            <span class="badge neutral">${WebShield.escapeHTML(log.status_code || "No status")}</span>
+          </div>
+          <div class="stack">
+            <div><span class="form-label">Description</span><p>${WebShield.escapeHTML(log.description || "No description provided.")}</p></div>
+            <div><span class="form-label">Source IP</span><p class="mono">${WebShield.escapeHTML(log.source_ip || "Unknown")}</p></div>
+            <div><span class="form-label">Target</span><p>${WebShield.escapeHTML(log.target_host || "Unknown host")} ${log.target_url ? " / " + WebShield.escapeHTML(log.target_url) : ""}</p></div>
+            <div><span class="form-label">Payload</span><pre class="raw-block">${WebShield.escapeHTML(log.payload || "No payload captured.")}</pre></div>
+            <div><span class="form-label">Raw Data</span><pre class="raw-block">${WebShield.escapeHTML(log.raw_data || "No raw data captured.")}</pre></div>
+          </div>
+        </div>`;
+      WebShield.openPanel("logDetailPanel");
+    }
+
+    function loadLogs(showToast) {
+      const params = new URLSearchParams();
+      params.set("limit", limit.value);
+      if (filter !== "all") params.set("type", filter);
+
+      return fetch(`{{ url_for('get_logs') }}?${params.toString()}`)
+        .then((response) => response.json())
+        .then((data) => {
+          logs = Array.isArray(data) ? data : (data.logs || []);
+          page = 1;
+          renderRows();
+          if (showToast) WebShield.toast("Logs refreshed", `${logs.length} events loaded.`, "success");
+        })
+        .catch(() => {
+          rows.innerHTML = `
+            <tr><td colspan="6"><div class="error-state"><i class="fas fa-circle-xmark"></i><h3>Could not load logs</h3><p>Check that the Flask API is running and try again.</p></div></td></tr>`;
+          WebShield.toast("Refresh failed", "Unable to fetch attack logs.", "danger");
+        });
     }
 
     function loadStats() {
-      fetch('/api/attack-type-counts')
-        .then(r => r.json())
-        .then(data => {
-          document.getElementById('stat-burp').textContent = data.burp || 0;
-          document.getElementById('stat-nmap').textContent = data.nmap || 0;
+      fetch("{{ url_for('get_stats') }}")
+        .then((response) => response.json())
+        .then((stats) => {
+          document.getElementById("stat-total").textContent = stats.total_logs || 0;
+          document.getElementById("stat-critical").textContent = stats.high_severity_alerts || 0;
+          const types = stats.attack_types || {};
+          document.getElementById("stat-types").textContent = Object.values(types).filter((value) => Number(value) > 0).length;
+          document.getElementById("stat-burp").textContent = types.burp || 0;
+          document.getElementById("stat-nmap").textContent = types.nmap || 0;
+          renderBars(types);
         })
         .catch(() => {});
     }
 
-  // Live polling
-  setInterval(() => { if (!document.hidden) { loadLogs(); loadStats(); } }, 15000);
+    document.getElementById("filterTabs").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-filter]");
+      if (!button) return;
+      filter = button.dataset.filter;
+      page = 1;
+      document.querySelectorAll("[data-filter]").forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+      loadLogs(false);
+    });
+
+    rows.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-log-id]");
+      if (!button) return;
+      const id = Number(button.dataset.logId);
+      const log = logs.find((item) => Number(item.id) === id);
+      if (log) openLog(log);
+    });
+
+    document.getElementById("refreshLogs").addEventListener("click", () => {
+      loadLogs(true);
+      loadStats();
+    });
+    limit.addEventListener("change", () => loadLogs(false));
+    prev.addEventListener("click", () => { page -= 1; renderRows(); });
+    next.addEventListener("click", () => { page += 1; renderRows(); });
+    document.getElementById("copyLogButton").addEventListener("click", () => {
+      if (!selectedLog || !navigator.clipboard) return;
+      navigator.clipboard.writeText(JSON.stringify(selectedLog, null, 2));
+      WebShield.toast("Copied", "Log JSON copied to clipboard.", "success");
+    });
+
+    renderRows();
+    loadStats();
+    setInterval(() => {
+      if (document.hidden) return;
+      loadLogs(false);
+      loadStats();
+    }, 15000);
+  })();
 </script>
-</body>
-</html>
+{% endblock %}

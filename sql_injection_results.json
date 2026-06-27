@@ -2,140 +2,19 @@
   "scan_info": {
     "target": "localhost:5000/login",
     "scan_type": "sql_injection_detection",
-    "timestamp": "2026-03-30T15:08:00.499746",
-    "total_attempts": 12
+    "timestamp": "2026-06-27T09:11:50.747878",
+    "total_attempts": 1
   },
   "results": [
     {
       "request": 1,
-      "query": "' UNION SELECT column_name, NULL FROM information_schema.columns WHERE table_name='users'#",
+      "query": "UNION SELECT NULL, NULL FROM information_schema.tables#",
       "source_ip": "127.0.0.1",
       "prediction": 1,
-      "probability": 0.56,
+      "probability": 0.99,
       "status_code": 403,
       "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-12T14:45:03.642894",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 2,
-      "query": "admin' OR 1=1 --",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-12T19:00:39.920883",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 3,
-      "query": "admin' OR 1=1 --",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-13T09:24:05.766656",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 4,
-      "query": "admin' OR 1=1 --",
-      "source_ip": "10.15.96.45",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-13T09:24:34.358373",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 5,
-      "query": "admin' OR 1=1 --",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-13T09:29:29.709107",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 6,
-      "query": "heollow admin",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-13T09:30:42.217538",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 7,
-      "query": "admin' OR 1=1 --",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-13T11:23:16.282339",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 8,
-      "query": "1' UNION SELECT DATABASE() ,2#",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 0.88,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-13T11:26:29.236177",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 9,
-      "query": "' UNION SELECT column_name, NULL FROM information_schema.columns WHERE table_name='users'#sd",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 0.56,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-26T09:07:09.661281",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 10,
-      "query": "' UNION SELECT column_name, NULL FROM information_schema.columns WHERE table_name='users'#sd",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 0.56,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-26T09:07:46.614026",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 11,
-      "query": "1' UNION SELECT 1,2#",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 1.0,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-26T09:07:51.612037",
-      "attack_type": "sql_injection"
-    },
-    {
-      "request": 12,
-      "query": "1' union select table_name,2 from information_schema.tables where table_schema ='dvwa'#",
-      "source_ip": "127.0.0.1",
-      "prediction": 1,
-      "probability": 0.84,
-      "status_code": 403,
-      "comment": "SQL INJECTION ATTACK DETECTED AND BLOCKED",
-      "timestamp": "2026-03-30T15:08:00.281668",
+      "timestamp": "2026-06-27T03:41:50.430481",
       "attack_type": "sql_injection"
     }
   ]
