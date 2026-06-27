@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Logs — WebShield</title>
+  <script>
+    (function(){try{const s=localStorage.getItem("ws-theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.setAttribute("data-theme",s==="dark"||s==="light"?s:(d?"dark":"light"));}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+</head>
+<body>
+<div class="mobile-topbar">
+  <button class="hamburger-btn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+  <div class="auth-brand-icon" style="width:32px;height:32px;font-size:0.8rem;"><i class="fas fa-shield-halved"></i></div>
+  <span class="brand-title">WebShield</span>
+</div>
+<div class="sidebar-overlay"></div>
+
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="brand-block">
+      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+      <div>
+        <div class="brand-title">WebShield</div>
+        <div class="brand-subtitle">Admin Console</div>
+      </div>
+    </div>
+    <div class="user-panel">
+      <div class="user-panel-name"><i class="fas fa-user-shield" style="margin-right:6px;opacity:0.7;"></i>{{ session_username }}</div>
+      <div class="user-panel-role">Security Administrator</div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <ul class="sidebar-nav">
+      <li><a class="nav-link" href="/admin"><span class="nav-icon"><i class="fas fa-gauge-high"></i></span> Dashboard</a></li>
+      <li><a class="nav-link" href="/ml-analysis"><span class="nav-icon"><i class="fas fa-brain"></i></span> ML Analysis</a></li>
+      <li><a class="nav-link active" href="/clear-logs"><span class="nav-icon"><i class="fas fa-trash-can"></i></span> Clear Logs</a></li>
+      <li><a class="nav-link" href="/dashboard"><span class="nav-icon"><i class="fas fa-satellite-dish"></i></span> Attack Stream</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a class="nav-link danger" href="/logout"><span class="nav-icon"><i class="fas fa-arrow-right-from-bracket"></i></span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <!-- Topbar -->
+    <header class="app-topbar animate-in">
+      <div class="topbar-left">
+        <span class="page-eyebrow"><i class="fas fa-trash-can"></i> Log Management</span>
+        <h1 class="page-title">Clear Logs</h1>
+        <p class="page-subtitle">Purge attack log categories. All deletions are permanent and cannot be undone.</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost btn-sm btn-theme" data-theme-toggle type="button"></button>
+      </div>
+    </header>
+
+    <!-- Warning -->
+    <div class="alert alert-warning animate-in">
+      <i class="fas fa-triangle-exclamation"></i>
+      <div>
+        <strong>Destructive operation.</strong> Clearing logs permanently removes all records in the selected category from the database. This action cannot be reversed.
+      </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+    {% for cat, msg in msgs %}
+    <div class="alert alert-{{ 'success' if cat == 'success' else 'danger' }} animate-in">
+      <i class="fas {{ 'fa-check-circle' if cat == 'success' else 'fa-triangle-exclamation' }}"></i>
+      <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Log type cards -->
+    <section class="clear-grid animate-in">
+      <!-- Brute Force -->
+      <div class="clear-card">
+        <div class="clear-card-icon orange"><i class="fas fa-user-slash"></i></div>
+        <div class="clear-card-title">Brute Force Logs</div>
+        <div class="clear-card-desc">All recorded brute-force login attempt entries and associated ML detections.</div>
+        <form method="POST" action="/clear-logs" style="width:100%;margin-top:auto;">
+          <input type="hidden" name="log_type" value="brute-force">
+          <button type="submit" class="btn btn-warning btn-block" onclick="return confirm('Delete all Brute Force logs? This cannot be undone.')">
+            <i class="fas fa-trash-can"></i> Clear Brute Force
+          </button>
+        </form>
+      </div>
+
+      <!-- Burp Suite -->
+      <div class="clear-card">
+        <div class="clear-card-icon cyan"><i class="fas fa-bug"></i></div>
+        <div class="clear-card-title">Burp Suite Logs</div>
+        <div class="clear-card-desc">Attack logs captured from Burp Suite proxy, including Nmap and SQL injection events.</div>
+        <form method="POST" action="/clear-logs" style="width:100%;margin-top:auto;">
+          <input type="hidden" name="log_type" value="burp-suite">
+          <button type="submit" class="btn btn-ghost btn-block" onclick="return confirm('Delete all Burp Suite logs? This cannot be undone.')" style="border-color:var(--cyan);color:var(--cyan);">
+            <i class="fas fa-trash-can"></i> Clear Burp Suite
+          </button>
+        </form>
+      </div>
+
+      <!-- All logs -->
+      <div class="clear-card" style="border-color:rgba(220,38,38,0.25);">
+        <div class="clear-card-icon red"><i class="fas fa-skull"></i></div>
+        <div class="clear-card-title">All Logs</div>
+        <div class="clear-card-desc">Nuke the entire attack log database including all categories, all ML records, and all login attempts.</div>
+        <form method="POST" action="/clear-logs" style="width:100%;margin-top:auto;">
+          <input type="hidden" name="log_type" value="all">
+          <button type="submit" class="btn btn-danger btn-block"
+                  onclick="return confirmClearAll()">
+            <i class="fas fa-skull"></i> Clear All Logs
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Info card -->
+    <div class="card animate-in">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:var(--brand-soft);color:var(--brand);"><i class="fas fa-circle-info"></i></div>
+          What Gets Deleted
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="two-col" style="gap:16px;">
+          <div>
+            <p style="font-size:0.8125rem;font-weight:700;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Brute Force</p>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;">
+              <li class="d-flex align-center gap-8"><span class="badge badge-danger"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=brute_force</code>)</span></li>
+              <li class="d-flex align-center gap-8"><span class="badge badge-danger"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">LoginAttempt records</span></li>
+              <li class="d-flex align-center gap-8"><span class="badge badge-danger"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">MLDetection records linked to brute force</span></li>
+            </ul>
+          </div>
+          <div>
+            <p style="font-size:0.8125rem;font-weight:700;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Burp Suite</p>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;">
+              <li class="d-flex align-center gap-8"><span class="badge badge-warning"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=burp</code>)</span></li>
+              <li class="d-flex align-center gap-8"><span class="badge badge-warning"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=sql_injection</code>)</span></li>
+              <li class="d-flex align-center gap-8"><span class="badge badge-warning"><i class="fas fa-circle"></i></span> <span style="font-size:0.875rem;">AttackLog entries (<code>attack_type=nmap</code>)</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Confirmation modal (clear all) -->
+<div class="modal-backdrop" id="clearAllModal" style="display:none;" onclick="closeClearModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="font-size:1.2rem;"><i class="fas fa-skull" style="color:var(--red);margin-right:8px;"></i></span>
+      <h2 style="font-size:1rem;font-weight:700;margin:0;">Confirm: Delete All Logs</h2>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.9rem;color:var(--text-2);margin:0;">
+        This will permanently delete <strong style="color:var(--text);">all</strong> attack logs, login attempts, and ML detection records from the database.
+        This action <strong style="color:var(--red);">cannot be undone</strong>.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('clearAllModal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger" onclick="document.getElementById('clearAllForm').submit()">
+        <i class="fas fa-skull"></i> Yes, Delete Everything
+      </button>
+    </div>
+  </div>
+</div>
+<form id="clearAllForm" method="POST" action="/clear-logs" style="display:none;">
+  <input type="hidden" name="log_type" value="all">
+</form>
+
+<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+<script>
+  function confirmClearAll() {
+    document.getElementById("clearAllModal").style.display = "flex";
+    return false;
+  }
+  function closeClearModal(e) {
+    if (e.target === document.getElementById("clearAllModal"))
+      document.getElementById("clearAllModal").style.display = "none";
+  }
+</script>
+</body>
+</html>

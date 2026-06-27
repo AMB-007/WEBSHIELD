@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — WebShield</title>
+  <script>
+    (function(){try{const s=localStorage.getItem("ws-theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.setAttribute("data-theme",s==="dark"||s==="light"?s:(d?"dark":"light"));}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- Mobile top bar -->
+<div class="mobile-topbar">
+  <button class="hamburger-btn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+  <div class="auth-brand-icon" style="width:32px;height:32px;font-size:0.8rem;"><i class="fas fa-shield-halved"></i></div>
+  <span class="brand-title">WebShield</span>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <a href="/logout" class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(220,38,38,0.25);">
+      <i class="fas fa-arrow-right-from-bracket"></i>
+    </a>
+  </div>
+</div>
+<div class="sidebar-overlay"></div>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="brand-block">
+      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+      <div>
+        <div class="brand-title">WebShield</div>
+        <div class="brand-subtitle">Admin Console</div>
+      </div>
+    </div>
+
+    <div class="user-panel">
+      <div class="user-panel-name"><i class="fas fa-user-shield" style="margin-right:6px;opacity:0.7;"></i>{{ session_username }}</div>
+      <div class="user-panel-role">Security Administrator</div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <ul class="sidebar-nav">
+      <li><a class="nav-link active" href="/admin">
+        <span class="nav-icon"><i class="fas fa-gauge-high"></i></span> Dashboard
+      </a></li>
+      <li><a class="nav-link" href="/ml-analysis">
+        <span class="nav-icon"><i class="fas fa-brain"></i></span> ML Analysis
+      </a></li>
+      <li><a class="nav-link" href="/clear-logs">
+        <span class="nav-icon"><i class="fas fa-trash-can"></i></span> Clear Logs
+      </a></li>
+      <li><a class="nav-link" href="/dashboard">
+        <span class="nav-icon"><i class="fas fa-satellite-dish"></i></span> Attack Stream
+      </a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <a class="nav-link danger" href="/logout">
+        <span class="nav-icon"><i class="fas fa-arrow-right-from-bracket"></i></span> Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="app-main">
+    <!-- Top bar -->
+    <header class="app-topbar animate-in">
+      <div class="topbar-left">
+        <span class="page-eyebrow"><i class="fas fa-shield-halved"></i> Security Operations</span>
+        <h1 class="page-title">Admin Dashboard</h1>
+        <p class="page-subtitle">Live visibility into authentication attempts and anomaly signals.</p>
+      </div>
+      <div class="topbar-right">
+        <div class="live-pill"><span class="dot"></span> Live</div>
+        <button class="btn btn-ghost btn-sm btn-theme" data-theme-toggle type="button"></button>
+        <button class="btn btn-ghost btn-sm" onclick="if(confirm('Logout?'))location.href='/logout'">
+          <i class="fas fa-arrow-right-from-bracket"></i>
+          <span class="hide-mobile">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stat cards -->
+    <section class="stats-grid">
+      <div class="stat-card blue animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Total Attempts</p>
+            <p class="stat-value">{{ total_attempts }}</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-arrow-right-to-bracket"></i></div>
+        </div>
+        <p class="stat-footer">All-time login activity</p>
+      </div>
+      <div class="stat-card red animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Failed Attempts</p>
+            <p class="stat-value">{{ failed_attempts }}</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-circle-xmark"></i></div>
+        </div>
+        <p class="stat-footer">Blocked or incorrect credentials</p>
+      </div>
+      <div class="stat-card green animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Successful Logins</p>
+            <p class="stat-value">{{ success_attempts }}</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+        </div>
+        <p class="stat-footer">Authenticated sessions</p>
+      </div>
+      <div class="stat-card orange animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Unique IPs</p>
+            <p class="stat-value">{{ unique_ips }}</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-network-wired"></i></div>
+        </div>
+        <p class="stat-footer">Distinct source addresses</p>
+      </div>
+    </section>
+
+    <!-- Activity + chart + alerts -->
+    <section class="two-col">
+      <!-- Activity list -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon" style="background:var(--brand-soft);color:var(--brand);"><i class="fas fa-clock-rotate-left"></i></div>
+            Recent Login Activity
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="manualRefresh()" id="refresh-btn">
+            <i class="fas fa-arrows-rotate"></i> Refresh
+          </button>
+        </div>
+        <div class="card-body" style="padding:14px;">
+          <div class="activity-list" id="recentActivity">
+            {% for attempt in recent_attempts %}
+            <div class="activity-item {{ 'failed' if not attempt.success else 'success' }} animate-in">
+              <div style="flex:1;min-width:0;">
+                <div class="d-flex align-center gap-8 mb-4">
+                  <span class="activity-user">{{ attempt.username }}</span>
+                  <span class="badge {{ 'badge-danger' if not attempt.success else 'badge-success' }}">
+                    <i class="fas {{ 'fa-circle-xmark' if not attempt.success else 'fa-circle-check' }}"></i>
+                    {{ 'FAILED' if not attempt.success else 'SUCCESS' }}
+                  </span>
+                </div>
+                <div class="activity-meta">
+                  <span><i class="fas fa-globe"></i>{{ attempt.ip_address }}</span>
+                  <span><i class="fas fa-clock"></i>{{ attempt.timestamp|display_time }}</span>
+                </div>
+              </div>
+              {% if attempt.user_agent %}
+              <div class="activity-agent hide-mobile">{{ attempt.user_agent[:50] }}…</div>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>No login attempts recorded yet.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <!-- Chart -->
+        <div class="card animate-in">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon" style="background:var(--cyan-soft);color:var(--cyan);"><i class="fas fa-chart-pie"></i></div>
+              Attack Statistics
+            </div>
+          </div>
+          <div class="card-body" style="display:flex;justify-content:center;align-items:center;min-height:200px;">
+            <canvas id="attackChart" width="300" height="200"
+                    data-failed="{{ failed_attempts|default(0) }}"
+                    data-success="{{ success_attempts|default(0) }}">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Security alerts -->
+        <div class="card animate-in">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon" style="background:var(--yellow-soft);color:var(--yellow);"><i class="fas fa-triangle-exclamation"></i></div>
+              Security Alerts
+            </div>
+            {% if security_alerts %}
+            <span class="badge badge-danger">{{ security_alerts|length }}</span>
+            {% endif %}
+          </div>
+          <div class="card-body" style="padding:14px;">
+            {% if security_alerts %}
+            <div class="alert-list">
+              {% for alert in security_alerts %}
+              <div class="security-alert-item">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>{{ alert }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:24px;">
+              <i class="fas fa-shield-check" style="color:var(--green);"></i>
+              <p>No security alerts at this time.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+<script>
+  // ── Chart ───────────────────────────────────────────────────────
+  const canvas  = document.getElementById("attackChart");
+  const failed  = parseInt(canvas.dataset.failed  || "0", 10);
+  const success = parseInt(canvas.dataset.success || "0", 10);
+  const isDark  = () => document.documentElement.getAttribute("data-theme") === "dark";
+
+  const chart = new Chart(canvas.getContext("2d"), {
+    type: "doughnut",
+    data: {
+      labels: ["Failed", "Successful"],
+      datasets: [{
+        data: [failed, success],
+        backgroundColor: ["#dc2626","#16a34a"],
+        borderColor: isDark() ? "#0f1e33" : "#ffffff",
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "68%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: isDark() ? "#8fa8c8" : "#4a5a72", usePointStyle:true, boxWidth:8, padding:16 }
+        }
+      }
+    }
+  });
+
+  window.addEventListener("themechange", () => {
+    chart.data.datasets[0].borderColor = isDark() ? "#0f1e33" : "#ffffff";
+    chart.options.plugins.legend.labels.color = isDark() ? "#8fa8c8" : "#4a5a72";
+    chart.update();
+  });
+
+  // ── Activity polling ─────────────────────────────────────────────
+  function updateRecentActivity(activity) {
+    const c = document.getElementById("recentActivity");
+    const html = `
+      <div class="activity-item ${activity.success ? "success" : "failed"} animate-in">
+        <div style="flex:1;min-width:0;">
+          <div class="d-flex align-center gap-8 mb-4">
+            <span class="activity-user">${activity.username}</span>
+            <span class="badge ${activity.success ? "badge-success" : "badge-danger"}">
+              <i class="fas ${activity.success ? "fa-circle-check" : "fa-circle-xmark"}"></i>
+              ${activity.success ? "SUCCESS" : "FAILED"}
+            </span>
+          </div>
+          <div class="activity-meta">
+            <span><i class="fas fa-globe"></i>${activity.ip_address}</span>
+            <span><i class="fas fa-clock"></i>Just now</span>
+          </div>
+        </div>
+      </div>`;
+    c.insertAdjacentHTML("afterbegin", html);
+    const items = c.querySelectorAll(".activity-item");
+    if (items.length > 10) items[items.length - 1].remove();
+  }
+
+  function checkActivity() {
+    if (document.hidden) return;
+    fetch("/api/recent-activity")
+      .then(r => r.json())
+      .then(d => { if (d.new_activity && d.activity) updateRecentActivity(d.activity); })
+      .catch(() => {});
+  }
+
+  setInterval(checkActivity, 30000);
+
+  function manualRefresh() {
+    const btn = document.getElementById("refresh-btn");
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+    setTimeout(() => location.reload(), 300);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Analysis — WebShield</title>
+  <script>
+    (function(){try{const s=localStorage.getItem("ws-theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.setAttribute("data-theme",s==="dark"||s==="light"?s:(d?"dark":"light"));}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+</head>
+<body>
+<div class="mobile-topbar">
+  <button class="hamburger-btn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+  <div class="auth-brand-icon" style="width:32px;height:32px;font-size:0.8rem;"><i class="fas fa-shield-halved"></i></div>
+  <span class="brand-title">WebShield</span>
+</div>
+<div class="sidebar-overlay"></div>
+
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="brand-block">
+      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+      <div>
+        <div class="brand-title">WebShield</div>
+        <div class="brand-subtitle">Admin Console</div>
+      </div>
+    </div>
+    <div class="user-panel">
+      <div class="user-panel-name"><i class="fas fa-user-shield" style="margin-right:6px;opacity:0.7;"></i>{{ session_username }}</div>
+      <div class="user-panel-role">Security Administrator</div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <ul class="sidebar-nav">
+      <li><a class="nav-link" href="/admin"><span class="nav-icon"><i class="fas fa-gauge-high"></i></span> Dashboard</a></li>
+      <li><a class="nav-link active" href="/ml-analysis"><span class="nav-icon"><i class="fas fa-brain"></i></span> ML Analysis</a></li>
+      <li><a class="nav-link" href="/clear-logs"><span class="nav-icon"><i class="fas fa-trash-can"></i></span> Clear Logs</a></li>
+      <li><a class="nav-link" href="/dashboard"><span class="nav-icon"><i class="fas fa-satellite-dish"></i></span> Attack Stream</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a class="nav-link danger" href="/logout"><span class="nav-icon"><i class="fas fa-arrow-right-from-bracket"></i></span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <!-- Topbar -->
+    <header class="app-topbar animate-in">
+      <div class="topbar-left">
+        <span class="page-eyebrow"><i class="fas fa-brain"></i> Machine Learning</span>
+        <h1 class="page-title">ML Threat Analysis</h1>
+        <p class="page-subtitle">Random Forest model detections for brute-force and SQL injection attacks.</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost btn-sm btn-theme" data-theme-toggle type="button"></button>
+        <button class="btn btn-ghost btn-sm" id="clearBtn" onclick="clearDetections()">
+          <i class="fas fa-trash-can"></i> <span class="hide-mobile">Clear Detections</span>
+        </button>
+        <button class="btn btn-primary btn-sm" id="analyzeBtn" onclick="analyzeJson()">
+          <i class="fas fa-play"></i> <span class="hide-mobile">Run Analysis</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ML Model status -->
+    <section id="statusSection" class="animate-in"></section>
+
+    <!-- Stats row -->
+    <section class="stats-grid" id="mlStats">
+      <div class="stat-card red animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Brute Force</p>
+            <p class="stat-value" id="stat-brute">—</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-user-slash"></i></div>
+        </div>
+        <p class="stat-footer">Detected login attacks</p>
+      </div>
+      <div class="stat-card orange animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">SQL Injection</p>
+            <p class="stat-value" id="stat-sql">—</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-database"></i></div>
+        </div>
+        <p class="stat-footer">Detected query attacks</p>
+      </div>
+      <div class="stat-card purple animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Total Detections</p>
+            <p class="stat-value" id="stat-total">—</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-radar"></i></div>
+        </div>
+        <p class="stat-footer">All ML flagged events</p>
+      </div>
+      <div class="stat-card cyan animate-in">
+        <div class="stat-top">
+          <div>
+            <p class="stat-label">Critical Severity</p>
+            <p class="stat-value" id="stat-critical">—</p>
+          </div>
+          <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        </div>
+        <p class="stat-footer">Highest threat tier</p>
+      </div>
+    </section>
+
+    <!-- Detection cards -->
+    <div class="card animate-in">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:var(--red-soft);color:var(--red);"><i class="fas fa-shield-exclamation"></i></div>
+          Active Threat Detections
+        </div>
+        <button class="btn btn-ghost btn-sm" id="refreshBtn" onclick="loadDetections()">
+          <i class="fas fa-arrows-rotate"></i> Refresh
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="detectionsContainer" class="detection-grid">
+          <div class="empty-state" style="grid-column:1/-1;">
+            <div class="spinner spinner-lg" style="margin:0 auto 12px;"></div>
+            <p>Loading detection data…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+<script>
+  function renderStatusBanner(status) {
+    const bf  = status.brute_force  || {};
+    const sql = status.sql_injection || {};
+    const bfLoaded  = bf.loaded  ? "active"  : "inactive";
+    const sqlLoaded = sql.loaded ? "active"  : "inactive";
+    const both = bf.loaded && sql.loaded;
+
+    document.getElementById("statusSection").innerHTML = `
+      <div class="status-banner ${both ? 'active' : (bf.loaded||sql.loaded ? 'partial' : 'inactive')} animate-in">
+        <div class="status-banner-info">
+          <div class="status-banner-title">
+            <i class="fas ${both ? 'fa-shield-check' : 'fa-triangle-exclamation'}" style="margin-right:8px;"></i>
+            ML Model Status — ${both ? 'All Systems Operational' : (bf.loaded||sql.loaded ? 'Partially Loaded' : 'Models Offline')}
+          </div>
+          <div class="status-banner-desc">
+            ${both ? 'Both Random Forest classifiers are active and analysing incoming traffic.' : 'One or more models failed to load. Check model paths in ml_service.py.'}
+          </div>
+        </div>
+        <div class="status-badges">
+          <span class="badge ${bf.loaded  ? 'badge-success' : 'badge-danger'}">
+            <i class="fas ${bf.loaded  ? 'fa-check' : 'fa-times'}"></i> Brute Force
+          </span>
+          <span class="badge ${sql.loaded ? 'badge-success' : 'badge-danger'}">
+            <i class="fas ${sql.loaded ? 'fa-check' : 'fa-times'}"></i> SQL Injection
+          </span>
+        </div>
+      </div>`;
+  }
+
+  function probClass(p) {
+    if (p >= 0.95) return "badge-danger";
+    if (p >= 0.80) return "badge-warning";
+    if (p >= 0.50) return "badge-yellow";
+    return "badge-success";
+  }
+  function probLabel(p) {
+    if (p >= 0.95) return "Critical";
+    if (p >= 0.80) return "High";
+    if (p >= 0.50) return "Medium";
+    return "Low";
+  }
+
+  function renderCard(d) {
+    const prob = parseFloat(d.probability) || 0;
+    const pct  = (prob * 100).toFixed(0);
+    const type = (d.attack_type||"").replace("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
+    const isBrute = (d.attack_type||"").includes("brute");
+    return `
+      <div class="detection-card ${isBrute ? 'brute-force' : 'sql-injection'} animate-in">
+        <div class="detection-card-title">
+          <span class="badge ${isBrute ? 'badge-danger' : 'badge-warning'}">
+            <i class="fas ${isBrute ? 'fa-user-slash' : 'fa-database'}"></i>
+          </span>
+          ${type}
+        </div>
+        <div class="detection-card-ip"><i class="fas fa-globe" style="margin-right:5px;opacity:0.5;"></i>${d.source_ip||'—'}</div>
+        <div class="detection-card-time"><i class="fas fa-clock" style="margin-right:5px;opacity:0.5;"></i>${d.detected_at||d.timestamp||'—'}</div>
+        <div class="detection-prob">
+          <div class="prob-bar"><div class="prob-bar-fill" style="width:${pct}%"></div></div>
+          <span class="prob-label">${pct}%</span>
+        </div>
+        <div class="detection-card-footer">
+          <span class="badge ${probClass(prob)}">${probLabel(prob)} Risk</span>
+          <span class="badge badge-neutral">${pct}% confidence</span>
+        </div>
+      </div>`;
+  }
+
+  function loadStats() {
+    fetch("/api/ml-stats")
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById("stat-brute").textContent   = d.brute_force   || 0;
+        document.getElementById("stat-sql").textContent     = d.sql_injection  || 0;
+        document.getElementById("stat-total").textContent   = d.total          || 0;
+        document.getElementById("stat-critical").textContent= d.critical        || 0;
+      }).catch(()=>{});
+  }
+
+  function loadDetections() {
+    document.getElementById("detectionsContainer").innerHTML =
+      `<div class="empty-state" style="grid-column:1/-1;"><div class="spinner spinner-lg" style="margin:0 auto 12px;"></div><p>Fetching detections…</p></div>`;
+    fetch("/api/ml-detections")
+      .then(r => r.json())
+      .then(d => {
+        const detections = d.detections || d || [];
+        if (!detections.length) {
+          document.getElementById("detectionsContainer").innerHTML =
+            `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-radar"></i><p>No ML detections recorded yet.<br>Run an analysis or start the brute-force simulator.</p></div>`;
+          return;
+        }
+        document.getElementById("detectionsContainer").innerHTML = detections.map(renderCard).join("");
+      }).catch(()=>{
+        document.getElementById("detectionsContainer").innerHTML =
+          `<div class="alert alert-danger" style="grid-column:1/-1;"><i class="fas fa-triangle-exclamation"></i><span>Failed to fetch detections.</span></div>`;
+      });
+  }
+
+  function analyzeJson() {
+    const btn = document.getElementById("analyzeBtn");
+    btn.innerHTML = '<span class="spinner"></span> Analysing…';
+    btn.disabled = true;
+    fetch("/api/ml-analyze-json", { method:"POST" })
+      .then(r => r.json())
+      .then(d => {
+        btn.innerHTML = '<i class="fas fa-play"></i> Run Analysis';
+        btn.disabled = false;
+        loadStats();
+        loadDetections();
+      }).catch(() => { btn.innerHTML = '<i class="fas fa-play"></i> Run Analysis'; btn.disabled = false; });
+  }
+
+  function clearDetections() {
+    if (!confirm("Clear all ML detection records?")) return;
+    const btn = document.getElementById("clearBtn");
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+    fetch("/api/ml-detections", { method:"DELETE" })
+      .then(() => { loadStats(); loadDetections(); })
+      .finally(() => {
+        btn.innerHTML = '<i class="fas fa-trash-can"></i> Clear Detections';
+        btn.disabled = false;
+      });
+  }
+
+  // Init
+  fetch("/api/ml-status").then(r => r.json()).then(renderStatusBanner).catch(()=>{});
+  loadStats();
+  loadDetections();
+  setInterval(loadDetections, 30000);
+</script>
+</body>
+</html>
